@@ -1,0 +1,13 @@
+# Data files — keep off GitHub
+*.csv
+*.xlsx
+*.xls
+*.webloc
+~$*
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc

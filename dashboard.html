@@ -1,0 +1,1992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>South Region KPI Dashboard</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#1a1a2e;font-size:14px;min-height:100vh}
+
+/* Header */
+.hdr{background:#1a1a2e;color:#fff;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.hdr h1{font-size:18px;font-weight:600;letter-spacing:.4px}
+.hdr .meta{font-size:11px;color:#8892b0;margin-top:2px}
+
+/* Summary cards */
+.cards{display:flex;gap:12px;padding:16px 24px;flex-wrap:wrap}
+.card{background:#fff;border-radius:8px;padding:14px 18px;flex:1;min-width:130px;
+      box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.card .lbl{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:#64748b;margin-bottom:4px}
+.card .val{font-size:24px;font-weight:700;color:#1a1a2e;line-height:1.1}
+.card .sub{font-size:10px;color:#94a3b8;margin-top:3px}
+.card.hi .val{color:#0ea5e9}
+
+/* Tabs */
+.tabs{display:flex;gap:0;padding:0 24px;background:#e8eaf0;border-bottom:1px solid #d1d5db}
+.tab{padding:10px 20px;cursor:pointer;font-size:13px;font-weight:500;color:#64748b;
+     border-top:3px solid transparent;transition:all .15s;white-space:nowrap}
+.tab.active{background:#fff;color:#1a1a2e;border-top-color:#0ea5e9}
+.tab:hover:not(.active){background:#f0f2f5}
+
+/* Panels */
+.panel{display:none;padding:20px 24px}
+.panel.active{display:block}
+
+/* Section labels */
+.sec-note{font-size:11px;color:#94a3b8;margin-bottom:14px;line-height:1.5}
+
+/* Chart row */
+.chart-row{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap}
+.cbox{background:#fff;border-radius:8px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.08);flex:1;min-width:280px}
+.cbox h3{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:10px}
+canvas{display:block;width:100%}
+
+/* Tables */
+.twrap{background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:auto;margin-bottom:18px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#f8fafc;padding:9px 10px;text-align:left;font-size:10px;font-weight:600;
+   text-transform:uppercase;letter-spacing:.5px;color:#64748b;cursor:pointer;
+   white-space:nowrap;border-bottom:2px solid #e2e8f0;user-select:none}
+th:hover{background:#f0f4f8}
+th::after{content:' ↕';opacity:.3;font-size:9px}
+td{padding:8px 10px;border-bottom:1px solid #f1f5f9;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fafc}
+
+/* Pills */
+.pill{display:inline-block;padding:2px 7px;border-radius:99px;font-size:9px;font-weight:700;letter-spacing:.3px}
+.pill.clinic{background:#dcfce7;color:#15803d}
+.pill.external{background:#fee2e2;color:#b91c1c}
+.pill.uncertain{background:#fef9c3;color:#92400e}
+
+/* Rate bar cell */
+.rb{display:flex;align-items:center;gap:5px}
+.rbw{flex:1;height:7px;background:#f1f5f9;border-radius:4px;min-width:50px;overflow:hidden}
+.rbb{height:100%;border-radius:4px}
+.rbv{font-size:11px;font-weight:600;min-width:38px;text-align:right}
+
+/* Origin compare cards */
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.cmp-card{background:#fff;border-radius:8px;padding:18px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.cmp-card.c-clinic{border-top:4px solid #22c55e}
+.cmp-card.c-ext{border-top:4px solid #f87171}
+.cmp-card h3{font-size:13px;font-weight:600;margin-bottom:14px}
+.stat{display:flex;justify-content:space-between;margin-bottom:7px;align-items:baseline}
+.stat .sl{font-size:11px;color:#64748b}
+.stat .sv{font-size:13px;font-weight:600}
+.stat .sci{font-size:9px;color:#94a3b8;display:block}
+
+/* Cross-check callout */
+.xcheck{background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;
+        padding:10px 14px;margin-bottom:16px;font-size:11px;color:#92400e;line-height:1.5}
+.xcheck strong{display:block;margin-bottom:2px}
+
+@media(max-width:680px){
+  .cmp-grid{grid-template-columns:1fr}
+  .cards .card{min-width:110px}
+  .tabs{overflow-x:auto}
+}
+
+/* Forecast tab */
+.drop-zone{border:2px dashed #cbd5e1;border-radius:12px;padding:48px 32px;text-align:center;
+           background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:18px;
+           transition:border-color .2s,background .2s;cursor:pointer}
+.drop-zone.over{border-color:#0ea5e9;background:#f0f9ff}
+.drop-title{font-size:15px;font-weight:600;margin-bottom:6px;color:#1a1a2e}
+.drop-sub{font-size:11px;color:#94a3b8;margin-bottom:16px;line-height:1.5}
+.btn-up{background:#0ea5e9;color:#fff;border:none;padding:8px 22px;border-radius:6px;
+        cursor:pointer;font-size:13px;font-weight:500}
+.btn-up:hover{background:#0284c7}
+.btn-reset{background:none;border:1px solid #cbd5e1;color:#64748b;padding:5px 14px;
+           border-radius:6px;cursor:pointer;font-size:12px;margin-left:8px}
+.fc-file-info{font-size:12px;color:#0ea5e9;margin-top:10px;font-weight:500}
+.fc-warn{background:#fff7ed;border:1px solid #fdba74;border-radius:6px;padding:8px 12px;
+         font-size:11px;color:#c2410c;margin-bottom:12px}
+.fc-method{background:#f8fafc;border-radius:6px;padding:12px 16px;font-size:11px;
+           color:#64748b;line-height:1.6;margin-top:14px}
+.fc-method strong{color:#374151;display:block;margin-bottom:4px}
+.ci-badge{font-size:10px;color:#94a3b8;display:block}
+
+/* Analysis tab */
+.corr-grid{display:flex;flex-direction:column;gap:14px;margin-bottom:20px}
+.corr-card{background:#fff;border-radius:8px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.corr-card h3{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#64748b;margin-bottom:4px}
+.corr-note{font-size:10px;color:#94a3b8;margin-bottom:8px}
+.corr-stat{display:inline-block;background:#f1f5f9;border-radius:4px;padding:2px 7px;font-size:10px;
+           margin-right:6px;color:#475569}
+.corr-stat.sig{background:#dcfce7;color:#15803d}
+.corr-stat.ns{background:#fef9c3;color:#92400e}
+.bt-model-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.bt-card{background:#fff;border-radius:8px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center}
+.bt-card .bt-lbl{font-size:10px;color:#64748b;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
+.bt-card .bt-val{font-size:22px;font-weight:700;color:#1a1a2e}
+.bt-card .bt-sub{font-size:10px;color:#94a3b8;margin-top:3px}
+.bt-card.best{border-top:3px solid #22c55e}
+.bt-winner{font-size:11px;color:#15803d;font-weight:600;margin-bottom:12px}
+.err-pos{color:#ef4444}.err-neg{color:#22c55e}.err-zero{color:#94a3b8}
+@media(max-width:680px){.bt-model-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div>
+    <h1 id="hdr-title"></h1>
+    <div class="meta" id="hdr-meta"></div>
+  </div>
+</div>
+
+<div class="cards" id="cards"></div>
+
+<div class="tabs">
+  <div class="tab active"  data-tab="lead">Lead Sources</div>
+  <div class="tab"         data-tab="clinics">Clinics</div>
+  <div class="tab"         data-tab="patients">Patient Types</div>
+  <div class="tab"         data-tab="origin">Clinic vs External</div>
+  <div class="tab"         data-tab="forecast">&#x1F4C5; Weekly Forecast</div>
+  <div class="tab"         data-tab="analysis">&#x1F50D; Analysis &amp; Backtest</div>
+</div>
+
+<div class="panel active" id="p-lead"></div>
+<div class="panel"        id="p-clinics"></div>
+<div class="panel"        id="p-patients"></div>
+<div class="panel"        id="p-origin"></div>
+<div class="panel"        id="p-forecast"></div>
+<div class="panel"        id="p-analysis"></div>
+
+<script>
+const D = {"generated": "2026-04-03", "period": "JAN–MAR 2026", "region": "South Region", "totals": {"tests": 3006, "show_rate": 0.5356, "show_ci": [0.5177, 0.5534], "close_rate": 0.425, "close_ci": [0.3969, 0.4537], "ha_units": 808, "asp": 2383.76, "revenue": 2082091.44}, "revenue_timing": {"contracted": 2082091.44, "invoiced": 2026250.37, "invoice_ratio": 0.9732, "sdf_pct": 0.4896, "ha_per_sale": 1.7727, "aidable_rate": 0.72, "aidable_rate_observed": 0.8403, "categories": [{"category": "Walk In", "group": "clinic", "tests": 424, "contracted": 636502.32, "invoiced": 601999.89, "inv_ratio": 0.9458, "sdf_pct": 0.4074, "ev_contracted": 1501.18}, {"category": "DM", "group": "external", "tests": 420, "contracted": 184556.5, "invoiced": 180796.5, "inv_ratio": 0.9796, "sdf_pct": 0.5682, "ev_contracted": 439.42}, {"category": "Outbound Call", "group": "external", "tests": 404, "contracted": 133241.0, "invoiced": 142366.0, "inv_ratio": 1.0685, "sdf_pct": 0.5806, "ev_contracted": 329.8}, {"category": "Direct Web", "group": "external", "tests": 394, "contracted": 301295.52, "invoiced": 295380.52, "inv_ratio": 0.9804, "sdf_pct": 0.5652, "ev_contracted": 764.71}, {"category": "Service Conversion", "group": "clinic", "tests": 325, "contracted": 162999.84, "invoiced": 172977.14, "inv_ratio": 1.0612, "sdf_pct": 0.4314, "ev_contracted": 501.54}, {"category": "Affiliate", "group": "external", "tests": 218, "contracted": 4610.0, "invoiced": 9590.0, "inv_ratio": 2.0803, "sdf_pct": 1.0, "ev_contracted": 21.15}, {"category": "WOM Referral", "group": "clinic", "tests": 157, "contracted": 206447.5, "invoiced": 199097.5, "inv_ratio": 0.9644, "sdf_pct": 0.6905, "ev_contracted": 1314.95}, {"category": "Social", "group": "external", "tests": 132, "contracted": 21968.0, "invoiced": 27798.0, "inv_ratio": 1.2654, "sdf_pct": 0.8, "ev_contracted": 166.42}, {"category": "Medical Referral", "group": "clinic", "tests": 108, "contracted": 118345.84, "invoiced": 108924.37, "inv_ratio": 0.9204, "sdf_pct": 0.6154, "ev_contracted": 1095.79}, {"category": "Inbound Call", "group": "external", "tests": 91, "contracted": 77873.65, "invoiced": 73652.18, "inv_ratio": 0.9458, "sdf_pct": 0.4211, "ev_contracted": 855.75}, {"category": "Conversion", "group": "uncertain", "tests": 85, "contracted": 129493.26, "invoiced": 123073.26, "inv_ratio": 0.9504, "sdf_pct": 0.1111, "ev_contracted": 1523.45}, {"category": "Paid Search", "group": "external", "tests": 69, "contracted": 32475.0, "invoiced": 29475.0, "inv_ratio": 0.9076, "sdf_pct": 0.625, "ev_contracted": 470.65}, {"category": "SEO", "group": "external", "tests": 54, "contracted": 30060.0, "invoiced": 30060.0, "inv_ratio": 1.0, "sdf_pct": 0.8571, "ev_contracted": 556.67}, {"category": "Events", "group": "clinic", "tests": 52, "contracted": 16113.0, "invoiced": 11330.0, "inv_ratio": 0.7032, "sdf_pct": 0.75, "ev_contracted": 309.87}, {"category": "Display", "group": "external", "tests": 33, "contracted": 5150.0, "invoiced": 5150.0, "inv_ratio": 1.0, "sdf_pct": 0.0, "ev_contracted": 156.06}, {"category": "Print Ad", "group": "external", "tests": 11, "contracted": 5800.0, "invoiced": 5960.0, "inv_ratio": 1.0276, "sdf_pct": 0.0, "ev_contracted": 527.27}, {"category": "Email", "group": "external", "tests": 10, "contracted": 0.0, "invoiced": 0.0, "inv_ratio": null, "sdf_pct": null, "ev_contracted": null}, {"category": "Fitting Fee", "group": "clinic", "tests": 8, "contracted": 5050.0, "invoiced": 5050.0, "inv_ratio": 1.0, "sdf_pct": 0.0, "ev_contracted": 631.25}, {"category": "TV", "group": "external", "tests": 5, "contracted": 2000.0, "invoiced": 2000.0, "inv_ratio": 1.0, "sdf_pct": 1.0, "ev_contracted": 400.0}, {"category": "SMS / Text Message", "group": "external", "tests": 4, "contracted": 0.0, "invoiced": 0.0, "inv_ratio": null, "sdf_pct": null, "ev_contracted": null}, {"category": "Wellness Referral", "group": "clinic", "tests": 1, "contracted": 73.6, "invoiced": 73.6, "inv_ratio": 1.0, "sdf_pct": null, "ev_contracted": 73.6}, {"category": "Door Drop", "group": "external", "tests": 0, "contracted": 0.0, "invoiced": 0.0, "inv_ratio": null, "sdf_pct": null, "ev_contracted": null}]}, "lead_sources": [{"category": "Walk In", "group": "clinic", "tests": 424, "show_rate": 0.7311, "show_ci": [0.687, 0.7711], "close_rate": 0.5625, "close_ci": [0.4969, 0.626], "revenue": 636502.32, "inv_revenue": 601999.89, "sdf_pct": 0.4074, "inv_ratio": 0.9458, "ci_reliable": true}, {"category": "DM", "group": "external", "tests": 420, "show_rate": 0.4786, "show_ci": [0.4312, 0.5263], "close_rate": 0.3034, "close_ci": [0.2344, 0.3825], "revenue": 184556.5, "inv_revenue": 180796.5, "sdf_pct": 0.5682, "inv_ratio": 0.9796, "ci_reliable": true}, {"category": "Outbound Call", "group": "external", "tests": 404, "show_rate": 0.4109, "show_ci": [0.364, 0.4595], "close_rate": 0.265, "close_ci": [0.1942, 0.3504], "revenue": 133241.0, "inv_revenue": 142366.0, "sdf_pct": 0.5806, "inv_ratio": 1.0685, "ci_reliable": true}, {"category": "Direct Web", "group": "external", "tests": 394, "show_rate": 0.5685, "show_ci": [0.5192, 0.6165], "close_rate": 0.4759, "close_ci": [0.4002, 0.5527], "revenue": 301295.52, "inv_revenue": 295380.52, "sdf_pct": 0.5652, "inv_ratio": 0.9804, "ci_reliable": true}, {"category": "Service Conversion", "group": "clinic", "tests": 325, "show_rate": 0.6338, "show_ci": [0.5802, 0.6844], "close_rate": 0.3469, "close_ci": [0.275, 0.4266], "revenue": 162999.84, "inv_revenue": 172977.14, "sdf_pct": 0.4314, "inv_ratio": 1.0612, "ci_reliable": true}, {"category": "Affiliate", "group": "external", "tests": 218, "show_rate": 0.2202, "show_ci": [0.1703, 0.2798], "close_rate": 0.0625, "close_ci": [0.0182, 0.1933], "revenue": 4610.0, "inv_revenue": 9590.0, "sdf_pct": 1.0, "inv_ratio": 2.0803, "ci_reliable": true}, {"category": "WOM Referral", "group": "clinic", "tests": 157, "show_rate": 0.6178, "show_ci": [0.5399, 0.6902], "close_rate": 0.5385, "close_ci": [0.4228, 0.6502], "revenue": 206447.5, "inv_revenue": 199097.5, "sdf_pct": 0.6905, "inv_ratio": 0.9644, "ci_reliable": true}, {"category": "Social", "group": "external", "tests": 132, "show_rate": 0.2424, "show_ci": [0.1773, 0.3221], "close_rate": 0.2941, "close_ci": [0.1487, 0.4984], "revenue": 21968.0, "inv_revenue": 27798.0, "sdf_pct": 0.8, "inv_ratio": 1.2654, "ci_reliable": true}, {"category": "Medical Referral", "group": "clinic", "tests": 108, "show_rate": 0.8241, "show_ci": [0.7415, 0.8844], "close_rate": 0.4727, "close_ci": [0.3554, 0.5931], "revenue": 118345.84, "inv_revenue": 108924.37, "sdf_pct": 0.6154, "inv_ratio": 0.9204, "ci_reliable": true}, {"category": "Inbound Call", "group": "external", "tests": 91, "show_rate": 0.6703, "show_ci": [0.5686, 0.7583], "close_rate": 0.4318, "close_ci": [0.2968, 0.5777], "revenue": 77873.65, "inv_revenue": 73652.18, "sdf_pct": 0.4211, "inv_ratio": 0.9458, "ci_reliable": true}, {"category": "Conversion", "group": "uncertain", "tests": 85, "show_rate": 0.8118, "show_ci": [0.7159, 0.8807], "close_rate": 0.6136, "close_ci": [0.4752, 0.7358], "revenue": 129493.26, "inv_revenue": 123073.26, "sdf_pct": 0.1111, "inv_ratio": 0.9504, "ci_reliable": true}, {"category": "Paid Search", "group": "external", "tests": 69, "show_rate": 0.4493, "show_ci": [0.3377, 0.5662], "close_rate": 0.4444, "close_ci": [0.2609, 0.6444], "revenue": 32475.0, "inv_revenue": 29475.0, "sdf_pct": 0.625, "inv_ratio": 0.9076, "ci_reliable": true}, {"category": "SEO", "group": "external", "tests": 54, "show_rate": 0.4815, "show_ci": [0.3539, 0.6115], "close_rate": 0.4118, "close_ci": [0.2243, 0.629], "revenue": 30060.0, "inv_revenue": 30060.0, "sdf_pct": 0.8571, "inv_ratio": 1.0, "ci_reliable": true}, {"category": "Events", "group": "clinic", "tests": 52, "show_rate": 0.5, "show_ci": [0.3689, 0.6311], "close_rate": 0.2, "close_ci": [0.0788, 0.4221], "revenue": 16113.0, "inv_revenue": 11330.0, "sdf_pct": 0.75, "inv_ratio": 0.7032, "ci_reliable": true}, {"category": "Display", "group": "external", "tests": 33, "show_rate": 0.1515, "show_ci": [0.0665, 0.3092], "close_rate": 0.6667, "close_ci": [0.2451, 0.9249], "revenue": 5150.0, "inv_revenue": 5150.0, "sdf_pct": 0.0, "inv_ratio": 1.0, "ci_reliable": false}, {"category": "Print Ad", "group": "external", "tests": 11, "show_rate": 0.7273, "show_ci": [0.4343, 0.9025], "close_rate": 0.25, "close_ci": [0.06, 0.6352], "revenue": 5800.0, "inv_revenue": 5960.0, "sdf_pct": 0.0, "inv_ratio": 1.0276, "ci_reliable": false}, {"category": "Email", "group": "external", "tests": 10, "show_rate": 0.2, "show_ci": [0.0567, 0.5098], "close_rate": 0.0, "close_ci": [0.0, 0.7935], "revenue": 0.0, "inv_revenue": 0.0, "sdf_pct": null, "inv_ratio": null, "ci_reliable": false}, {"category": "Fitting Fee", "group": "clinic", "tests": 8, "show_rate": 0.625, "show_ci": [0.3057, 0.8632], "close_rate": 0.5, "close_ci": [0.15, 0.85], "revenue": 5050.0, "inv_revenue": 5050.0, "sdf_pct": 0.0, "inv_ratio": 1.0, "ci_reliable": false}, {"category": "TV", "group": "external", "tests": 5, "show_rate": 0.2, "show_ci": [0.0362, 0.6245], "close_rate": 1.0, "close_ci": [0.2065, 1.0], "revenue": 2000.0, "inv_revenue": 2000.0, "sdf_pct": 1.0, "inv_ratio": 1.0, "ci_reliable": false}, {"category": "SMS / Text Message", "group": "external", "tests": 4, "show_rate": 0.5, "show_ci": [0.15, 0.85], "close_rate": 0.0, "close_ci": [0.0, 0.7935], "revenue": 0.0, "inv_revenue": 0.0, "sdf_pct": null, "inv_ratio": null, "ci_reliable": false}, {"category": "Wellness Referral", "group": "clinic", "tests": 1, "show_rate": 1.0, "show_ci": [0.2065, 1.0], "close_rate": null, "close_ci": [null, null], "revenue": 73.6, "inv_revenue": 73.6, "sdf_pct": null, "inv_ratio": 1.0, "ci_reliable": false}, {"category": "Door Drop", "group": "external", "tests": 0, "show_rate": null, "show_ci": [null, null], "close_rate": null, "close_ci": [null, null], "revenue": 0.0, "inv_revenue": 0.0, "sdf_pct": null, "inv_ratio": null, "ci_reliable": false}], "clinics": [{"name": "GA Newnan", "state": "GA", "tests": 90, "show_rate": 0.941, "show_ci": [0.872, 0.9739], "show_confirm": 0.944, "show_nonconfirm": 0.935, "comp_rate": 0.889, "ha_units": 58, "asp": 2907.0, "revenue": 175993.0, "ci_reliable": true}, {"name": "GA Fayetteville Hwy 54", "state": "GA", "tests": 123, "show_rate": 0.938, "show_ci": [0.8807, 0.9687], "show_confirm": 0.967, "show_nonconfirm": 0.81, "comp_rate": 0.862, "ha_units": 88, "asp": 2789.0, "revenue": 254968.0, "ci_reliable": true}, {"name": "GA Locust Grove", "state": "GA", "tests": 24, "show_rate": 0.889, "show_ci": [0.7069, 0.9638], "show_confirm": 0.938, "show_nonconfirm": 0.5, "comp_rate": 0.667, "ha_units": 10, "asp": 1675.0, "revenue": 17019.0, "ci_reliable": false}, {"name": "GA Stockbridge Village", "state": "GA", "tests": 108, "show_rate": 0.828, "show_ci": [0.7459, 0.8876], "show_confirm": 0.863, "show_nonconfirm": 0.7, "comp_rate": 0.713, "ha_units": 41, "asp": 2484.0, "revenue": 107425.0, "ci_reliable": true}, {"name": "GA Douglasville Hwy 5", "state": "GA", "tests": 69, "show_rate": 0.755, "show_ci": [0.6419, 0.8412], "show_confirm": 0.846, "show_nonconfirm": 0.4, "comp_rate": 0.536, "ha_units": 6, "asp": 2567.0, "revenue": 19605.0, "ci_reliable": true}, {"name": "GA Peachtree City", "state": "GA", "tests": 172, "show_rate": 0.728, "show_ci": [0.6571, 0.789], "show_confirm": 0.81, "show_nonconfirm": 0.25, "comp_rate": 0.576, "ha_units": 42, "asp": 2846.0, "revenue": 124638.0, "ci_reliable": true}, {"name": "AL Montgomery", "state": "AL", "tests": 290, "show_rate": 0.694, "show_ci": [0.6387, 0.7442], "show_confirm": 0.811, "show_nonconfirm": 0.392, "comp_rate": 0.445, "ha_units": 47, "asp": 2451.0, "revenue": 119621.0, "ci_reliable": true}, {"name": "AL Gadsden", "state": "AL", "tests": 376, "show_rate": 0.68, "show_ci": [0.6312, 0.7251], "show_confirm": 0.734, "show_nonconfirm": 0.452, "comp_rate": 0.588, "ha_units": 104, "asp": 2173.0, "revenue": 239414.0, "ci_reliable": true}, {"name": "GA Fayetteville Yorktown", "state": "GA", "tests": 341, "show_rate": 0.677, "show_ci": [0.6256, 0.7244], "show_confirm": 0.813, "show_nonconfirm": 0.296, "comp_rate": 0.534, "ha_units": 113, "asp": 2049.0, "revenue": 240997.0, "ci_reliable": true}, {"name": "GA Douglasville Hospital Drive", "state": "GA", "tests": 313, "show_rate": 0.65, "show_ci": [0.5956, 0.7007], "show_confirm": 0.822, "show_nonconfirm": 0.291, "comp_rate": 0.553, "ha_units": 59, "asp": 2317.0, "revenue": 150735.0, "ci_reliable": true}, {"name": "GA Blairsville", "state": "GA", "tests": 58, "show_rate": 0.628, "show_ci": [0.4993, 0.7408], "show_confirm": 0.826, "show_nonconfirm": 0.4, "comp_rate": 0.466, "ha_units": 11, "asp": 2960.0, "revenue": 32993.0, "ci_reliable": true}, {"name": "AL Oxford", "state": "AL", "tests": 209, "show_rate": 0.626, "show_ci": [0.5587, 0.6888], "show_confirm": 0.764, "show_nonconfirm": 0.339, "comp_rate": 0.545, "ha_units": 66, "asp": 1780.0, "revenue": 124278.0, "ci_reliable": true}, {"name": "GA Carrollton", "state": "GA", "tests": 132, "show_rate": 0.618, "show_ci": [0.5329, 0.6964], "show_confirm": 0.744, "show_nonconfirm": 0.313, "comp_rate": 0.515, "ha_units": 10, "asp": 2405.0, "revenue": 25985.0, "ci_reliable": true}, {"name": "GA Stockbridge Eagles", "state": "GA", "tests": 219, "show_rate": 0.546, "show_ci": [0.4798, 0.6106], "show_confirm": 0.777, "show_nonconfirm": 0.25, "comp_rate": 0.457, "ha_units": 36, "asp": 2696.0, "revenue": 99995.0, "ci_reliable": true}, {"name": "AL Auburn", "state": "AL", "tests": 127, "show_rate": 0.544, "show_ci": [0.4574, 0.6281], "show_confirm": 0.63, "show_nonconfirm": 0.214, "comp_rate": 0.291, "ha_units": 38, "asp": 2521.0, "revenue": 101537.0, "ci_reliable": true}, {"name": "GA Columbus", "state": "GA", "tests": 203, "show_rate": 0.532, "show_ci": [0.4634, 0.5994], "show_confirm": 0.6, "show_nonconfirm": 0.412, "comp_rate": 0.369, "ha_units": 40, "asp": 2344.0, "revenue": 94730.0, "ci_reliable": true}, {"name": "AL Albertville", "state": "AL", "tests": 152, "show_rate": 0.515, "show_ci": [0.4362, 0.5931], "show_confirm": 0.736, "show_nonconfirm": 0.258, "comp_rate": 0.454, "ha_units": 39, "asp": 2266.0, "revenue": 96318.0, "ci_reliable": true}], "origin": {"Clinic-Generated": {"count": 236, "showed": 163, "show_rate": 0.6907, "show_ci": [0.629, 0.7462], "sold": 75, "aidable": 138, "close_rate": 0.5435, "close_ci": [0.4603, 0.6243]}, "External": {"count": 264, "showed": 100, "show_rate": 0.3788, "show_ci": [0.3224, 0.4386], "sold": 21, "aidable": 83, "close_rate": 0.253, "close_ci": [0.1719, 0.356]}}, "patients": [{"count": 209, "showed": 122, "show_rate": 0.5837, "show_ci": [0.516, 0.6485], "sold": 42, "aidable": 96, "close_rate": 0.4375, "close_ci": [0.3426, 0.5372], "type": "New Prospect"}, {"count": 164, "showed": 107, "show_rate": 0.6524, "show_ci": [0.5768, 0.7211], "sold": 41, "aidable": 98, "close_rate": 0.4184, "close_ci": [0.3256, 0.5173], "type": "Customer"}, {"count": 127, "showed": 34, "show_rate": 0.2677, "show_ci": [0.1984, 0.3507], "sold": 13, "aidable": 27, "close_rate": 0.4815, "close_ci": [0.3074, 0.6601], "type": "Database Prospect"}], "cross_check": {"rd_clinic_tests": 1075, "rd_external_tests": 1845, "rd_uncertain_tests": 85, "rd_clinic_pct": 0.3682, "rd_external_pct": 0.6318, "sf_sample": 500, "sf_clinic_pct": 0.472, "sf_external_pct": 0.528, "alignment_note": "RD category split (excl. uncertain): 36.8% clinic / 63.2% external. SF creator-role split (n=500 sample): 47.2% clinic / 52.8% external."}, "rates": {"categories": {"Walk In": {"show": 0.7311, "close": 0.5625, "group": "clinic", "n": 424}, "DM": {"show": 0.4786, "close": 0.3034, "group": "external", "n": 420}, "Outbound Call": {"show": 0.4109, "close": 0.265, "group": "external", "n": 404}, "Direct Web": {"show": 0.5685, "close": 0.4759, "group": "external", "n": 394}, "Service Conversion": {"show": 0.6338, "close": 0.3469, "group": "clinic", "n": 325}, "Affiliate": {"show": 0.2202, "close": 0.0625, "group": "external", "n": 218}, "WOM Referral": {"show": 0.6178, "close": 0.5385, "group": "clinic", "n": 157}, "Social": {"show": 0.2424, "close": 0.2941, "group": "external", "n": 132}, "Medical Referral": {"show": 0.8241, "close": 0.4727, "group": "clinic", "n": 108}, "Inbound Call": {"show": 0.6703, "close": 0.4318, "group": "external", "n": 91}, "Conversion": {"show": 0.8118, "close": 0.6136, "group": "uncertain", "n": 85}, "Paid Search": {"show": 0.4493, "close": 0.4444, "group": "external", "n": 69}, "SEO": {"show": 0.4815, "close": 0.4118, "group": "external", "n": 54}, "Events": {"show": 0.5, "close": 0.2, "group": "clinic", "n": 52}, "Display": {"show": 0.1515, "close": 0.6667, "group": "external", "n": 33}, "Print Ad": {"show": 0.7273, "close": 0.25, "group": "external", "n": 11}, "Email": {"show": 0.2, "close": 0.0, "group": "external", "n": 10}, "Fitting Fee": {"show": 0.625, "close": 0.5, "group": "clinic", "n": 8}, "TV": {"show": 0.2, "close": 1.0, "group": "external", "n": 5}, "SMS / Text Message": {"show": 0.5, "close": 0.0, "group": "external", "n": 4}, "Wellness Referral": {"show": 1.0, "close": null, "group": "clinic", "n": 1}}, "clinics": {"GA Newnan": {"confirmed": 0.944, "nonconfirmed": 0.935, "total": 0.941, "n": 90}, "GA Fayetteville Hwy 54": {"confirmed": 0.967, "nonconfirmed": 0.81, "total": 0.938, "n": 123}, "GA Locust Grove": {"confirmed": 0.938, "nonconfirmed": 0.5, "total": 0.889, "n": 24}, "GA Stockbridge Village": {"confirmed": 0.863, "nonconfirmed": 0.7, "total": 0.828, "n": 108}, "GA Douglasville Hwy 5": {"confirmed": 0.846, "nonconfirmed": 0.4, "total": 0.755, "n": 69}, "GA Peachtree City": {"confirmed": 0.81, "nonconfirmed": 0.25, "total": 0.728, "n": 172}, "AL Montgomery": {"confirmed": 0.811, "nonconfirmed": 0.392, "total": 0.694, "n": 290}, "AL Gadsden": {"confirmed": 0.734, "nonconfirmed": 0.452, "total": 0.68, "n": 376}, "GA Fayetteville Yorktown": {"confirmed": 0.813, "nonconfirmed": 0.296, "total": 0.677, "n": 341}, "GA Douglasville Hospital Drive": {"confirmed": 0.822, "nonconfirmed": 0.291, "total": 0.65, "n": 313}, "GA Blairsville": {"confirmed": 0.826, "nonconfirmed": 0.4, "total": 0.628, "n": 58}, "AL Oxford": {"confirmed": 0.764, "nonconfirmed": 0.339, "total": 0.626, "n": 209}, "GA Carrollton": {"confirmed": 0.744, "nonconfirmed": 0.313, "total": 0.618, "n": 132}, "GA Stockbridge Eagles": {"confirmed": 0.777, "nonconfirmed": 0.25, "total": 0.546, "n": 219}, "AL Auburn": {"confirmed": 0.63, "nonconfirmed": 0.214, "total": 0.544, "n": 127}, "GA Columbus": {"confirmed": 0.6, "nonconfirmed": 0.412, "total": 0.532, "n": 203}, "AL Albertville": {"confirmed": 0.736, "nonconfirmed": 0.258, "total": 0.515, "n": 152}}, "region": {"confirmed": 0.789, "nonconfirmed": 0.3786, "show": 0.6706, "close": 0.425}, "origin": {"clinic": {"show": 0.7014, "close": 0.5435}, "external": {"show": 0.3821, "close": 0.253}}, "aidable_rate": 0.72, "aidable_of_tested": 0.9, "test_rate": 0.8, "asp": 2383.76, "ha_per_sale": 1.7727, "ev_per_test": {"Walk In": 1501.18, "DM": 439.42, "Outbound Call": 329.8, "Direct Web": 764.71, "Service Conversion": 501.54, "Affiliate": 21.15, "WOM Referral": 1314.95, "Social": 166.42, "Medical Referral": 1095.79, "Inbound Call": 855.75, "Conversion": 1523.45, "Paid Search": 470.65, "SEO": 556.67, "Events": 309.87, "Display": 156.06, "Print Ad": 527.27, "Fitting Fee": 631.25, "TV": 400.0, "Wellness Referral": 73.6}, "ev_per_group": {"clinic": 1065.61, "external": 433.08, "overall": 692.65}, "campaign_map": {"AAAA-226 zC59NV": null, "AH0Q-7 Insurance": "Inbound Call", "AH0D-14 OOW 33-60 Months Direct Mail Follow Up": "DM", "AH0Q-10 Referral - Physician": "Medical Referral", "AH0Q-12 Walk-In / Service": "Walk In", "AH0Q-9 Referral – Patient": "WOM Referral", "AHT3-40 TV_National Cable_Brand": "TV", "AH0Q-2 Digital - Internet Search": "Direct Web", "AH42-3 Letter (Zeal)": null, "AH0L-4 Custom List - Acquisitions Conversion Outliers Last 5 Years": "Service Conversion", "AH0Q-1 Digital – HearingLife Website": "Direct Web", "AH46-3 March - 2026 - Zeal Launch Wanted - Meta - Social Media": "Social", "AH33-13 2026 Google Search | US_BR_Brand - 1-59 Days Follow Up": "Paid Search", "AHUN-27 Oticon Real (RD) 30+ Days": null, "AH34-13 2026 Google Search | US_BR_Brand_Location - 1-59 Days Follow Up": "Paid Search", "AH5P-9 B&W Letter - Test 2": null, "AH0Q-6 External Events": "Events", "AHZM-1 Proactive Customer Appt Booked": "Outbound Call", "AHUR-25 Follow Up - 30+ Days (Oticon Real)": "Outbound Call", "AH0D-16 OOW 61-72 Months": "DM", "AH0D-27 OOW 97 Months -12 Years": "DM", "AH0D-3 TNS 25-36 Months - PSC": "Outbound Call", "AHZN-7 Facebook Intent (Dynamic) - 1-29 follow up": "Social", "AG7Z-1 Web": "Direct Web", "AHZ8-3 2025 Priority 02 - OOW 39-48 Months": "DM", "AHNN-1 Upgrade Event - B&W Letter": "Events", "AH0D-13 TNS 7-36 Months Direct Mail Follow Up": "DM", "AHUS-23 Follow Up - 30+ Days": "Outbound Call", "AH0D-5 No Show / Cancelled 7 Days - 1 Year - PSC": "Outbound Call", "AHW6-18 Verified Digital - CPL": "Direct Web", "AH0D-4 TNS 37+ Months - PSC": "Outbound Call", "AH3S-1 Letter": null, "AHW6-20 Verified Digital - 1-29 Days": "Direct Web", "AH29-1 33-35 Months Letter": null, "AH0L-6 Custom List - Sold Not Fit (TNS)": "Outbound Call", "AHUV-1 MVF - Affiliate (Unbranded)": "Affiliate", "AHT9-1 33-35 Months Letter - 20% Off All HA's & Accessories Purchases": null, "AHDG-1 Organic Search": "SEO", "AH20-1 Letter": null, "AH0D-1 TNS 41 days to 1 Year - PSC": "Outbound Call", "AH0D-2 TNS 12-24 Months - PSC": "Outbound Call", "AH0D-23 OOW 73-96 Months": "DM", "AHDG-2 Organic Search Follow-up - Fresh Forms": "SEO", "AH39-13 2026 Google Search | US_LG_Hearing_Test - 1-59 Days Follow Up": "Paid Search", "AHUR-26 Follow Up - 1-29 Days (Oticon Real)": "Outbound Call", "AHTR-13 PSC - Jan OOW 33-60 Follow Up High Volume": "DM", "AG60-13 General - Clinic Only": "Walk In", "AH46-13 2026 - Zeal Launch Wanted - Meta - Social Media - 1-59 Days Follow Up": "Social", "AH3P-1 Letter": null, "AH0L-3 Custom List - Clear Audio": null, "AH0D-21 OOW 36-38 Months": "DM", "AH0Q-3 Digital – Social Media": "Social", "AHW6-22 Web": "Direct Web", "AHUU-9 Best Hearing Aids - 30+ Days Follow Up Call": "Outbound Call", "AH0D-12 TNS 0-6 Months Direct Mail Follow Up": "DM", "AH39-3 March - 2026 Google Search | US_LG_Hearing_Test": "Paid Search", "AHZQ-1 Interest Media Intent - Landing Page": null, "AH0D-17 OOW 49-60 Months": "DM", "AHW6-19 Verified Digital - 30+ Days": "Direct Web", "AHZP-5 Facebook Free Hearing Test - 30+ Day follow up": "Social", "AH4T-3 2026 Priority 02 - OOW 39-48 Months": "DM", "AHDJ-2 Online Referrals Follow-up - Fresh Forms": "Outbound Call", "AH0O-5 30+ day follow up": "Outbound Call", "AH0Q-11 Traditional Media – TV, Radio, Newspaper, Magazine": "TV", "AHUR-8 AUGUST": null, "AAAA-177 zC31NV": null, "AHUI-25 Follow Up - 30+ Days": "Outbound Call", "AHUO-31 Interest Media - 30+ Days": null, "AHU9-9 Belgrave Media - 30+ Days Follow Up Call": "Outbound Call", "AHGQ-2 Organic Direct Web - Fresh Forms": "Direct Web", "AHX7-5 61-96 Months Letter": null, "AAAG-5 Out Of Warranty - Clinic Only": "Walk In", "AH27-1 Letter": null, "AH3T-5 61-96 Months Letter": null, "AB2R CXL/No Show Follow Up": "Outbound Call", "AHXZ-7 Offer SMS": "SMS / Text Message", "AH0Q-5 Direct Mail": "DM", "AH36-3 March - 2026 Google Search | US_LG_Hearing_Aids": "Paid Search", "AH41-7 36-60 Months Letter (Zeal)": null, "AH29-5 61-96 Months Letter": null, "AH3S-2 Letter (IL ONLY)": null, "AH0D-28 OOW 12+ Years": "DM", "AH3L-3 36-60 Months Letter": null, "AHUW-11 Leads.Io - 1-29 Days Follow Up Call": "Outbound Call", "AH4T-10 2026 Priority 06 - OOW 61-72 Months": "DM", "AHZN-5 Facebook Intent (Dynamic) - 30+ follow up": "Social", "AH4T-14 2026 Priority 10 - Medical Referral Follow Up": "Medical Referral", "AHUO-7 JULY": null, "AH1Q-1 Lead Test Group 1": null, "AHEU-1 Web Chat": "Direct Web", "AH3T-3 36-60 Months Letter": null, "AHUV-10 MVF - 30+ Days Follow Up Call": "Outbound Call", "AH3U-3 13-24 Months Letter": null, "AH54-3 March - 2026-Unbranded-Meta-BHA-Affiliate": "Affiliate", "AH13-7 B&W Letter - Test 1": null, "AHUU-10 Best Hearing Aids - 1-29 Days Follow Up": "Outbound Call", "AH37-13 2026 Google Search | US_LG_Hearing_Clinics - 1-59 Days Follow Up": "Paid Search", "AHUN-25 Free Hearing Test": null, "AH36-13 2026 Google Search | US_LG_Hearing_Aids - 1-59 Days Follow Up": "Paid Search", "AH40-5 25-36 Months Letter": null, "AHZN-1 Facebook - Own SI": "Social", "AH0D-30 TNS 96+ Months": "Outbound Call", "AHWU-8 August": null, "AH4W-4 Lead Test 2": null, "AH4T-1 2026 Priority 01 - OOW 36-38 Months": "DM", "AHY4-4 TNS | 12 Months - 24 Months | Clinic | High Volume": "Outbound Call", "AH4T-15 2026 Priority 11 - Wax Referral Follow Up": "Outbound Call", "AH0D-29 TNS 37- 96 Months": "Outbound Call", "AH57-3 March - 2026-Branded-Meta-BHA-Affiliate": "Affiliate", "AHUW-10 Leads.Io - 30+ Days Follow Up Call": "Outbound Call", "AHQ2-21 UAW 974": null, "AH29-3 36-60 Months Letter": null, "AAAB-2 Walk-In": "Walk In", "AH4T-9 2026 Priority 06 - OOW 61-72 Months": "DM", "AHUR-6 JUNE": null, "AH5X-3 March - 2026-March Promo-Trade-in-Rexdirect- Display": "Display", "AG60-5 Walk-In": "Walk In", "AH30-3 March - 2026 Google Search | US_AW_Competitors": "Paid Search"}}, "correlations": [{"feature": "Confirmation Status", "type": "binary", "levels": [{"label": "Confirmed", "n": 274, "show_rate": 0.7336, "ci": [0.6783, 0.7824]}, {"label": "Not Confirmed", "n": 218, "show_rate": 0.2844, "ci": [0.2287, 0.3476]}], "or": 6.93, "or_ci": [4.65, 10.31], "z": 9.922, "pval": 0.0, "note": "Strongest single predictor of show rate"}, {"feature": "Lead Source Origin", "type": "binary", "levels": [{"label": "Clinic-Generated", "n": 231, "show_rate": 0.7056, "ci": [0.6439, 0.7607]}, {"label": "External", "n": 261, "show_rate": 0.3831, "ci": [0.3263, 0.4434]}], "or": 3.86, "or_ci": [2.65, 5.63], "z": 7.157, "pval": 0.0, "note": "Clinic-generated appointments show ~1.8× rate of external"}, {"feature": "Patient Type", "type": "categorical", "levels": [{"label": "New Prospect", "n": 209, "show_rate": 0.5837, "ci": [0.516, 0.6485]}, {"label": "Customer", "n": 160, "show_rate": 0.6688, "ci": [0.5926, 0.737]}, {"label": "Database Prospect", "n": 123, "show_rate": 0.2764, "ci": [0.2051, 0.3613]}], "or": null, "or_ci": null, "z": null, "pval": null, "note": "New vs existing vs prior non-purchaser"}, {"feature": "Appointment Lead Time", "type": "binned", "levels": [{"label": "0 – Same Day", "n": 45, "show_rate": 0.7556, "ci": [0.6133, 0.8576]}, {"label": "1–3 days", "n": 183, "show_rate": 0.5355, "ci": [0.4633, 0.6063]}, {"label": "4–7 days", "n": 171, "show_rate": 0.5263, "ci": [0.4517, 0.5998]}, {"label": "8–14 days", "n": 88, "show_rate": 0.4545, "ci": [0.3546, 0.5583]}, {"label": "15+ days", "n": 5, "show_rate": 0.2, "ci": [0.0362, 0.6245]}], "pearson_r": -0.1293, "pval": 0.0039, "or": null, "or_ci": null, "note": "Pearson r=-0.1293 (p=0.0039): longer lead time → lower show rate"}, {"feature": "Day of Week (Appt)", "type": "categorical", "levels": [{"label": "Monday", "n": 119, "show_rate": 0.5294, "ci": [0.4402, 0.6168]}, {"label": "Tuesday", "n": 115, "show_rate": 0.5391, "ci": [0.4482, 0.6275]}, {"label": "Wednesday", "n": 113, "show_rate": 0.6018, "ci": [0.5096, 0.6873]}, {"label": "Thursday", "n": 72, "show_rate": 0.5, "ci": [0.3875, 0.6125]}, {"label": "Friday", "n": 73, "show_rate": 0.4658, "ci": [0.3559, 0.579]}], "or": null, "or_ci": null, "z": null, "pval": null, "note": "Day appointment is scheduled"}], "backtest": {"n_train": 86, "n_test": 406, "cutoff": "2026-03-18", "actual_shows": 215, "actual_sales": 77, "actual_rev": 325378.23, "asp_used": 2383.76, "ha_per_sale": 1.7727, "pred_rev_ev": 323362.72, "rev_mae_ev": 2016, "models": {"A": {"label": "Equal-Weight (SF sample)", "pred": 216.7, "brier": 0.2042, "mae": 1.7, "pred_rev": 284154.28, "rev_mae": 41224}, "B": {"label": "Recency-Weighted 30d half-life (SF sample)", "pred": 216.0, "brier": 0.2041, "mae": 1.0, "pred_rev": 283146.58, "rev_mae": 42232}, "C": {"label": "Full-Period AJ CSV rates (JAN–MAR)", "pred": 242.6, "brier": 0.1922, "mae": 27.6, "pred_rev": 318977.66, "rev_mae": 6401}}, "clinic_rows": [{"clinic": "AL Albertville", "n": 17, "actual": 7, "sold": 4, "predA": 8.4, "predB": 8.5, "predC": 7.3, "actual_rev": 16903, "revA": 9280, "revB": 9310, "revEV": 8919}, {"clinic": "AL Auburn", "n": 22, "actual": 9, "sold": 6, "predA": 11.6, "predB": 11.7, "predC": 8.9, "actual_rev": 25354, "revA": 14529, "revB": 14579, "revEV": 16026}, {"clinic": "AL Gadsden", "n": 44, "actual": 24, "sold": 6, "predA": 24.0, "predB": 23.4, "predC": 29.2, "actual_rev": 25354, "revA": 31409, "revB": 30541, "revEV": 34686}, {"clinic": "AL Montgomery", "n": 27, "actual": 12, "sold": 5, "predA": 14.0, "predB": 14.3, "predC": 15.6, "actual_rev": 21128, "revA": 15833, "revB": 16165, "revEV": 20063}, {"clinic": "AL Oxford", "n": 35, "actual": 18, "sold": 5, "predA": 11.0, "predB": 11.1, "predC": 23.3, "actual_rev": 21128, "revA": 13965, "revB": 14133, "revEV": 24310}, {"clinic": "GA Blairsville", "n": 7, "actual": 4, "sold": 0, "predA": 3.6, "predB": 3.7, "predC": 4.1, "actual_rev": 0, "revA": 5004, "revB": 5021, "revEV": 5854}, {"clinic": "GA Carrollton", "n": 22, "actual": 10, "sold": 0, "predA": 10.0, "predB": 10.1, "predC": 9.0, "actual_rev": 0, "revA": 13267, "revB": 13321, "revEV": 16738}, {"clinic": "GA Columbus", "n": 35, "actual": 11, "sold": 5, "predA": 17.4, "predB": 17.1, "predC": 18.0, "actual_rev": 21128, "revA": 24105, "revB": 23578, "revEV": 27902}, {"clinic": "GA Douglasville Hospital Drive", "n": 37, "actual": 22, "sold": 4, "predA": 20.7, "predB": 20.7, "predC": 21.4, "actual_rev": 16903, "revA": 25402, "revB": 25449, "revEV": 25064}, {"clinic": "GA Douglasville Hwy 5", "n": 4, "actual": 3, "sold": 0, "predA": 2.2, "predB": 2.2, "predC": 2.5, "actual_rev": 0, "revA": 3046, "revB": 3055, "revEV": 3470}, {"clinic": "GA Fayetteville Hwy 54", "n": 17, "actual": 16, "sold": 8, "predA": 13.9, "predB": 14.0, "predC": 16.1, "actual_rev": 33806, "revA": 21242, "revB": 21400, "revEV": 21188}, {"clinic": "GA Fayetteville Yorktown", "n": 50, "actual": 28, "sold": 10, "predA": 25.4, "predB": 24.6, "predC": 29.3, "actual_rev": 42257, "revA": 31982, "revB": 30938, "revEV": 38206}, {"clinic": "GA Locust Grove", "n": 16, "actual": 10, "sold": 5, "predA": 15.1, "predB": 15.1, "predC": 9.3, "actual_rev": 21128, "revA": 23418, "revB": 23424, "revEV": 19602}, {"clinic": "GA Newnan", "n": 17, "actual": 14, "sold": 9, "predA": 10.7, "predB": 10.7, "predC": 16.0, "actual_rev": 38031, "revA": 16270, "revB": 16306, "revEV": 22316}, {"clinic": "GA Peachtree City", "n": 21, "actual": 13, "sold": 3, "predA": 9.7, "predB": 10.0, "predC": 13.1, "actual_rev": 12677, "revA": 11798, "revB": 12250, "revEV": 14874}, {"clinic": "GA Stockbridge Eagles", "n": 27, "actual": 11, "sold": 6, "predA": 14.2, "predB": 14.2, "predC": 13.1, "actual_rev": 25354, "revA": 18145, "revB": 18203, "revEV": 17872}, {"clinic": "GA Stockbridge Village", "n": 8, "actual": 3, "sold": 1, "predA": 4.7, "predB": 4.7, "predC": 6.4, "actual_rev": 4226, "revA": 5458, "revB": 5473, "revEV": 6270}]}, "same_week_creation": {"region": {"Mon": {"clinic_gen": 2.6, "non_clinic_gen": 0.6}, "Tue": {"clinic_gen": 3.0, "non_clinic_gen": 2.8}, "Wed": {"clinic_gen": 4.0, "non_clinic_gen": 3.6}, "Thu": {"clinic_gen": 3.8, "non_clinic_gen": 3.6}, "Fri": {"clinic_gen": 3.2, "non_clinic_gen": 4.6}}, "by_clinic": {"AL Albertville": null, "AL Auburn": {"Mon": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}, "Tue": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}, "Wed": {"clinic_gen": 0.75, "non_clinic_gen": 0.0}, "Thu": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}, "Fri": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}}, "AL Gadsden": {"Mon": {"clinic_gen": 0.5, "non_clinic_gen": 0.0}, "Tue": {"clinic_gen": 0.75, "non_clinic_gen": 0.25}, "Wed": {"clinic_gen": 1.0, "non_clinic_gen": 0.5}, "Thu": {"clinic_gen": 0.25, "non_clinic_gen": 0.25}, "Fri": {"clinic_gen": 0.25, "non_clinic_gen": 0.25}}, "AL Montgomery": {"Mon": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}, "Tue": {"clinic_gen": 0.5, "non_clinic_gen": 1.0}, "Wed": {"clinic_gen": 0.25, "non_clinic_gen": 0.25}, "Thu": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}, "Fri": {"clinic_gen": 0.5, "non_clinic_gen": 0.5}}, "AL Oxford": {"Mon": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}, "Tue": {"clinic_gen": 0.5, "non_clinic_gen": 0.75}, "Wed": {"clinic_gen": 0.25, "non_clinic_gen": 0.5}, "Thu": {"clinic_gen": 0.0, "non_clinic_gen": 1.0}, "Fri": {"clinic_gen": 0.5, "non_clinic_gen": 1.25}}, "GA Blairsville": {"Mon": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}, "Tue": {"clinic_gen": 0.25, "non_clinic_gen": 0.0}, "Wed": {"clinic_gen": 0.25, "non_clinic_gen": 0.0}, "Thu": {"clinic_gen": 0.0, "non_clinic_gen": 0.25}, "Fri": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}}, "GA Carrollton": {"Mon": {"clinic_gen": 0.25, "non_clinic_gen": 0.0}, "Tue": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}, "Wed": {"clinic_gen": 0.5, "non_clinic_gen": 0.25}, "Thu": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}, "Fri": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}}, "GA Columbus": {"Mon": {"clinic_gen": 0.5, "non_clinic_gen": 0.0}, "Tue": {"clinic_gen": 0.5, "non_clinic_gen": 0.75}, "Wed": {"clinic_gen": 0.0, "non_clinic_gen": 0.25}, "Thu": {"clinic_gen": 0.25, "non_clinic_gen": 0.5}, "Fri": {"clinic_gen": 0.75, "non_clinic_gen": 0.5}}, "GA Douglasville Hospital Drive": {"Mon": {"clinic_gen": 0.4, "non_clinic_gen": 0.0}, "Tue": {"clinic_gen": 0.2, "non_clinic_gen": 0.2}, "Wed": {"clinic_gen": 0.0, "non_clinic_gen": 0.4}, "Thu": {"clinic_gen": 0.8, "non_clinic_gen": 0.4}, "Fri": {"clinic_gen": 0.4, "non_clinic_gen": 1.0}}, "GA Douglasville Hwy 5": null, "GA Fayetteville Hwy 54": {"Mon": {"clinic_gen": 0.0, "non_clinic_gen": 0.25}, "Tue": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}, "Wed": {"clinic_gen": 0.5, "non_clinic_gen": 0.75}, "Thu": {"clinic_gen": 0.5, "non_clinic_gen": 0.25}, "Fri": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}}, "GA Fayetteville Yorktown": {"Mon": {"clinic_gen": 0.75, "non_clinic_gen": 0.0}, "Tue": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}, "Wed": {"clinic_gen": 0.25, "non_clinic_gen": 0.75}, "Thu": {"clinic_gen": 0.75, "non_clinic_gen": 0.5}, "Fri": {"clinic_gen": 0.75, "non_clinic_gen": 1.5}}, "GA Newnan": null, "GA Peachtree City": {"Mon": {"clinic_gen": 0.25, "non_clinic_gen": 0.0}, "Tue": {"clinic_gen": 0.25, "non_clinic_gen": 0.25}, "Wed": {"clinic_gen": 0.5, "non_clinic_gen": 0.25}, "Thu": {"clinic_gen": 0.75, "non_clinic_gen": 0.25}, "Fri": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}}, "GA Stockbridge Eagles": null, "GA Stockbridge Village": {"Mon": {"clinic_gen": 0.25, "non_clinic_gen": 0.0}, "Tue": {"clinic_gen": 0.0, "non_clinic_gen": 0.0}, "Wed": {"clinic_gen": 0.25, "non_clinic_gen": 0.0}, "Thu": {"clinic_gen": 0.25, "non_clinic_gen": 0.0}, "Fri": {"clinic_gen": 0.0, "non_clinic_gen": 0.25}}}, "n_weeks": 5}};
+
+// ── Formatting ────────────────────────────────────────────────────────────────
+const f = {
+  pct: v => v == null ? '—' : (v*100).toFixed(1)+'%',
+  n:   v => v == null ? '—' : (+v).toLocaleString(),
+  $:   v => v == null ? '—' : '$'+Math.round(v).toLocaleString(),
+  // ci: only render if reliable flag is true (or not provided); flag small-n with a note
+  ci:  (c, reliable) => {
+    if(reliable===false) return '<span style="color:#f59e0b;font-size:9px" title="n too small: min(n\xd7p, n\xd7(1-p)) < 5 \u2014 Wilson CI unreliable">n too small</span>';
+    return (c && c[0]!=null) ? `[${(c[0]*100).toFixed(1)}%\u2013${(c[1]*100).toFixed(1)}%]` : '';
+  },
+};
+const gCol  = g => g==='clinic'?'#22c55e':g==='external'?'#f87171':'#fbbf24';
+const gLbl  = g => g==='clinic'?'Clinic-Gen':g==='external'?'External':'Uncertain';
+
+// ── Header & cards ────────────────────────────────────────────────────────────
+document.getElementById('hdr-title').textContent = D.region+' \u2014 Hearing Care KPI Dashboard';
+document.getElementById('hdr-meta').textContent  = D.period+'  \u00b7  Generated '+D.generated;
+
+const t = D.totals;
+document.getElementById('cards').innerHTML = [
+  {lbl:'Tests Scheduled', val:f.n(t.tests),        sub:'JAN\u2013MAR 2026'},
+  {lbl:'Show Rate',       val:f.pct(t.show_rate),   sub:f.ci(t.show_ci), cls:'hi'},
+  {lbl:'Close Rate',      val:f.pct(t.close_rate),  sub:f.ci(t.close_ci)},
+  {lbl:'HA Units',        val:f.n(t.ha_units),      sub:'ASP '+f.$(t.asp)},
+  {lbl:'Revenue',         val:f.$(t.revenue),        sub:''},
+].map(c=>`<div class="card ${c.cls||''}">
+  <div class="lbl">${c.lbl}</div>
+  <div class="val">${c.val}</div>
+  <div class="sub">${c.sub}</div>
+</div>`).join('');
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('p-'+tab.dataset.tab).classList.add('active');
+    // Redraw charts after panel becomes visible
+    const t = tab.dataset.tab;
+    if(t==='analysis') drawCorrCharts();
+    else { drawAll(t); if(t==='forecast') renderForecastHistory(); }
+  });
+});
+
+// ── Sortable tables ───────────────────────────────────────────────────────────
+function makeSortable(id){
+  const tbl = document.getElementById(id);
+  if(!tbl) return;
+  tbl.querySelectorAll('th').forEach((th,col)=>{
+    th.addEventListener('click',()=>{
+      const asc = tbl.dataset.sc===String(col) && tbl.dataset.sd==='asc';
+      tbl.dataset.sc=col; tbl.dataset.sd=asc?'desc':'asc';
+      const rows=[...tbl.querySelector('tbody').rows];
+      const num = th.dataset.num!=='false';
+      rows.sort((a,b)=>{
+        let va=a.cells[col]?.dataset?.v ?? a.cells[col]?.textContent??'';
+        let vb=b.cells[col]?.dataset?.v ?? b.cells[col]?.textContent??'';
+        if(num){va=+va||0;vb=+vb||0;}
+        return asc?(va>vb?1:-1):(va<vb?1:-1);
+      });
+      rows.forEach(r=>tbl.querySelector('tbody').appendChild(r));
+    });
+  });
+}
+
+// ── Rate bar helper ───────────────────────────────────────────────────────────
+function rateBar(val, group){
+  const w = val!=null?(val*100).toFixed(1):0;
+  return `<div class="rb">
+    <div class="rbw"><div class="rbb" style="width:${w}%;background:${gCol(group||'uncertain')}"></div></div>
+    <span class="rbv">${f.pct(val)}</span>
+  </div>`;
+}
+
+// ── LEAD SOURCES panel ────────────────────────────────────────────────────────
+function renderLead(){
+  const ls = D.lead_sources;
+  document.getElementById('p-lead').innerHTML = `
+    <p class="sec-note">
+      Lead sources are never aggregated — each category shown separately with 95% Wilson confidence intervals.
+      <span style="display:inline-flex;gap:10px;margin-left:8px">
+        <span><span class="pill clinic">Clinic-Gen</span></span>
+        <span><span class="pill external">External</span></span>
+        <span><span class="pill uncertain">Uncertain</span></span>
+      </span>
+    </p>
+    <div class="chart-row">
+      <div class="cbox" style="flex:2"><h3>Show Rate by Lead Source \u2014 sorted, 95% CI</h3><canvas id="cv-sr"></canvas></div>
+      <div class="cbox" style="flex:1"><h3>Test Volume by Lead Source</h3><canvas id="cv-vol"></canvas></div>
+    </div>
+    <div class="twrap"><table id="tbl-ls">
+      <thead><tr>
+        <th data-num="false">Category</th>
+        <th data-num="false">Type</th>
+        <th>Tests</th>
+        <th>Show Rate</th>
+        <th data-num="false">95% CI</th>
+        <th>Close Rate</th>
+        <th data-num="false">Close 95% CI</th>
+        <th>Contracted Rev</th>
+        <th>EV/Test</th>
+      </tr></thead>
+      <tbody>${ls.map(d=>`<tr>
+        <td>${d.category}</td>
+        <td><span class="pill ${d.group}">${gLbl(d.group)}</span></td>
+        <td data-v="${d.tests}">${f.n(d.tests)}</td>
+        <td data-v="${d.show_rate??0}">${rateBar(d.show_rate,d.group)}</td>
+        <td style="color:#94a3b8;font-size:10px">${f.ci(d.show_ci,d.ci_reliable)}</td>
+        <td data-v="${d.close_rate??0}">${rateBar(d.close_rate,d.group)}</td>
+        <td style="color:#94a3b8;font-size:10px">${f.ci(d.close_ci,d.ci_reliable)}</td>
+        <td data-v="${d.revenue}">${f.$(d.revenue)}</td>
+        <td data-v="${d.tests>0?d.revenue/d.tests:0}">${d.tests>0?f.$(Math.round(d.revenue/d.tests)):'\u2014'}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+
+    <div class="section-title" style="font-size:13px;font-weight:600;margin:20px 0 10px">
+      Revenue Timing \u2014 Contracted vs Invoiced
+    </div>
+    <p class="sec-note">
+      Contracted = committed at point of fitting (same period as appointment).
+      Invoiced = cash recognition (follows within ~4 weeks for most categories).
+      Region total: contracted ${f.$(D.revenue_timing.contracted)},
+      invoiced ${f.$(D.revenue_timing.invoiced)}
+      (${f.pct(D.revenue_timing.invoice_ratio)} invoice ratio &middot;
+      ${f.pct(D.revenue_timing.sdf_pct)} same-day fit).
+      Ratios &gt;1.00 reflect prior-period carryover invoicing in this period;
+      &lt;1.00 reflect end-of-period contracts not yet invoiced.
+    </p>
+    <div class="twrap"><table id="tbl-rev-timing">
+      <thead><tr>
+        <th data-num="false">Category</th>
+        <th data-num="false">Type</th>
+        <th>Tests</th>
+        <th>Contracted</th>
+        <th>Invoiced</th>
+        <th>Invoice Ratio</th>
+        <th>Same-Day Fit %</th>
+        <th>EV/Test (contracted)</th>
+      </tr></thead>
+      <tbody>
+        <tr style="background:#f8fafc;font-weight:600">
+          <td>TOTAL</td><td></td>
+          <td>${f.n(D.revenue_timing.categories.reduce((a,r)=>a+r.tests,0))}</td>
+          <td>${f.$(D.revenue_timing.contracted)}</td>
+          <td>${f.$(D.revenue_timing.invoiced)}</td>
+          <td>${f.pct(D.revenue_timing.invoice_ratio)}</td>
+          <td>${f.pct(D.revenue_timing.sdf_pct)}</td>
+          <td>${f.$(Math.round(D.revenue_timing.contracted / D.revenue_timing.categories.reduce((a,r)=>a+r.tests,0)))}</td>
+        </tr>
+        ${D.revenue_timing.categories.filter(r=>r.contracted>0||r.invoiced>0).map(r=>`<tr>
+          <td>${r.category}</td>
+          <td><span class="pill ${r.group}">${gLbl(r.group)}</span></td>
+          <td data-v="${r.tests}">${f.n(r.tests)}</td>
+          <td data-v="${r.contracted}">${f.$(r.contracted)}</td>
+          <td data-v="${r.invoiced}">${f.$(r.invoiced)}</td>
+          <td data-v="${r.inv_ratio??0}" style="color:${r.inv_ratio==null?'#94a3b8':r.inv_ratio>1.05?'#0ea5e9':r.inv_ratio<0.92?'#f59e0b':'#22c55e'}">
+            ${r.inv_ratio!=null?f.pct(r.inv_ratio):'\u2014'}
+          </td>
+          <td data-v="${r.sdf_pct??0}">${r.sdf_pct!=null?f.pct(r.sdf_pct):'\u2014'}</td>
+          <td data-v="${r.ev_contracted??0}">${r.ev_contracted!=null?f.$(Math.round(r.ev_contracted)):'\u2014'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table></div>
+    <div class="fc-method">
+      <strong>Funnel model calibration</strong>
+      The revenue funnel uses explicit parameters confirmed by regional manager:
+      ${f.pct(D.rates.test_rate)} of shows receive a hearing test &times;
+      ${f.pct(D.rates.aidable_of_tested)} of tested have aidable hearing loss &times;
+      close rate &times; ${D.rates.ha_per_sale.toFixed(3)} HA/sale (back-calculated) &times; ASP ${f.$(D.rates.asp)}.
+      Effective aidable rate = ${f.pct(D.rates.aidable_rate)} (replaces SF-observed ${f.pct(D.revenue_timing.aidable_rate_observed)}).
+      ha/sale of ${D.rates.ha_per_sale.toFixed(3)} is calibrated to match full-period contracted revenue exactly;
+      lower than the 1.9 binaural target because some sales are monaural and end-of-period
+      contracted units invoice in the next period.
+    </div>`;
+  makeSortable('tbl-ls');
+  makeSortable('tbl-rev-timing');
+}
+
+// ── CLINICS panel ─────────────────────────────────────────────────────────────
+function renderClinics(){
+  const cl = D.clinics;
+  document.getElementById('p-clinics').innerHTML = `
+    <p class="sec-note">Click any column to sort. Show rate 95% CI via Wilson score interval.
+    Confirmed vs. non-confirmed show rates reveal the lift from appointment confirmation.</p>
+    <div class="chart-row">
+      <div class="cbox"><h3>Show Rate by Clinic \u2014 95% CI</h3><canvas id="cv-csr"></canvas></div>
+      <div class="cbox"><h3>HA Units by Clinic</h3><canvas id="cv-cu"></canvas></div>
+    </div>
+    <div class="twrap"><table id="tbl-cl">
+      <thead><tr>
+        <th data-num="false">Clinic</th>
+        <th data-num="false">ST</th>
+        <th>Tests</th>
+        <th>Show Rate</th>
+        <th data-num="false">95% CI</th>
+        <th>Conf SR</th>
+        <th>Non-Conf SR</th>
+        <th>HA Units</th>
+        <th>ASP</th>
+        <th>Revenue</th>
+      </tr></thead>
+      <tbody>${cl.map(d=>`<tr>
+        <td>${d.name}</td>
+        <td>${d.state}</td>
+        <td data-v="${d.tests}">${f.n(d.tests)}</td>
+        <td data-v="${d.show_rate??0}">${rateBar(d.show_rate,'uncertain')}</td>
+        <td style="color:#94a3b8;font-size:10px">${f.ci(d.show_ci,d.ci_reliable)}</td>
+        <td data-v="${d.show_confirm??0}">${f.pct(d.show_confirm)}</td>
+        <td data-v="${d.show_nonconfirm??0}">${f.pct(d.show_nonconfirm)}</td>
+        <td data-v="${d.ha_units}">${f.n(d.ha_units)}</td>
+        <td data-v="${d.asp}">${f.$(d.asp)}</td>
+        <td data-v="${d.revenue}">${f.$(d.revenue)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  makeSortable('tbl-cl');
+}
+
+// ── PATIENTS panel ────────────────────────────────────────────────────────────
+function renderPatients(){
+  const pts = D.patients;
+  document.getElementById('p-patients').innerHTML = `
+    <p class="sec-note">From appointment-level Sales Funnel (sample, n=${f.n(D.cross_check.sf_sample)}).
+    New Prospect = first-time buyer. Customer = existing patient. Database Prospect = prior non-purchaser in system.</p>
+    <div class="chart-row">
+      <div class="cbox"><h3>Show Rate by Patient Type \u2014 95% CI</h3><canvas id="cv-ptsr" height="200"></canvas></div>
+      <div class="cbox"><h3>Close Rate by Patient Type \u2014 95% CI</h3><canvas id="cv-ptcr" height="200"></canvas></div>
+    </div>
+    <div class="twrap"><table>
+      <thead><tr>
+        <th data-num="false">Patient Type</th><th>Count</th><th>Showed</th>
+        <th>Show Rate</th><th data-num="false">95% CI</th>
+        <th>Sold</th><th>Aidable</th>
+        <th>Close Rate</th><th data-num="false">95% CI</th>
+      </tr></thead>
+      <tbody>${pts.map(d=>`<tr>
+        <td><strong>${d.type}</strong></td>
+        <td>${f.n(d.count)}</td>
+        <td>${f.n(d.showed)}</td>
+        <td>${f.pct(d.show_rate)}</td>
+        <td style="color:#94a3b8;font-size:10px">${f.ci(d.show_ci)}</td>
+        <td>${f.n(d.sold)}</td>
+        <td>${f.n(d.aidable)}</td>
+        <td>${f.pct(d.close_rate)}</td>
+        <td style="color:#94a3b8;font-size:10px">${f.ci(d.close_ci)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+}
+
+// ── ORIGIN panel ──────────────────────────────────────────────────────────────
+function renderOrigin(){
+  const cc = D.cross_check;
+  const orig = D.origin;
+  document.getElementById('p-origin').innerHTML = `
+    <div class="xcheck">
+      <strong>Cross-check: two independent classification signals</strong>
+      ${cc.alignment_note}
+      A large divergence between these proportions would indicate category misclassification and warrant review.
+    </div>
+    <div class="cmp-grid">
+      ${Object.entries(orig).map(([name,d],i)=>`
+      <div class="cmp-card ${i===0?'c-clinic':'c-ext'}">
+        <h3>${name}</h3>
+        <div class="stat"><span class="sl">Appointments (sample)</span><span class="sv">${f.n(d.count)}</span></div>
+        <div class="stat"><span class="sl">Showed</span><span class="sv">${f.n(d.showed)}</span></div>
+        <div class="stat">
+          <span class="sl">Show Rate</span>
+          <span class="sv">${f.pct(d.show_rate)}<span class="sci">${f.ci(d.show_ci)}</span></span>
+        </div>
+        <div class="stat"><span class="sl">Sold</span><span class="sv">${f.n(d.sold)}</span></div>
+        <div class="stat"><span class="sl">Aidable Losses</span><span class="sv">${f.n(d.aidable)}</span></div>
+        <div class="stat">
+          <span class="sl">Close Rate</span>
+          <span class="sv">${f.pct(d.close_rate)}<span class="sci">${f.ci(d.close_ci)}</span></span>
+        </div>
+      </div>`).join('')}
+    </div>
+    <div class="chart-row">
+      <div class="cbox"><h3>Show Rate \u2014 Clinic-Generated vs External, 95% CI</h3><canvas id="cv-osr" height="200"></canvas></div>
+      <div class="cbox"><h3>Close Rate \u2014 Clinic-Generated vs External, 95% CI</h3><canvas id="cv-ocr" height="200"></canvas></div>
+    </div>`;
+}
+
+// ── Canvas charts ─────────────────────────────────────────────────────────────
+
+function hbarCI(id, items){
+  // items: [{label, value, ci, color, group}]
+  const cv = document.getElementById(id);
+  if(!cv) return;
+  const ROW=20, PL=155, PR=70, PT=8, PB=22;
+  const W = cv.parentElement.clientWidth - 32;
+  const H = items.length*ROW + PT + PB;
+  cv.width=W; cv.height=H; cv.style.height=H+'px';
+  const cx = cv.getContext('2d');
+  const CW = W - PL - PR;
+
+  // Grid & x-axis labels
+  cx.lineWidth=1;
+  for(let v=0;v<=1;v+=0.2){
+    const x = PL + v*CW;
+    cx.strokeStyle='#f1f5f9';
+    cx.beginPath(); cx.moveTo(x,PT); cx.lineTo(x,H-PB); cx.stroke();
+    cx.fillStyle='#94a3b8'; cx.font='9px Segoe UI'; cx.textAlign='center';
+    cx.fillText((v*100).toFixed(0)+'%', x, H-PB+12);
+  }
+
+  items.forEach((item,i)=>{
+    const y=PT+i*ROW, bh=ROW-5, by=y+2;
+    // Label
+    cx.fillStyle='#374151'; cx.font='11px Segoe UI'; cx.textAlign='right';
+    const lbl=item.label.length>22?item.label.slice(0,21)+'\u2026':item.label;
+    cx.fillText(lbl, PL-5, by+bh/2+4);
+    if(item.value==null) return;
+    // Bar
+    const bw=item.value*CW;
+    cx.fillStyle=item.color+'44';
+    cx.fillRect(PL,by,bw,bh);
+    cx.fillStyle=item.color;
+    cx.fillRect(PL,by,bw,bh);
+    // CI whiskers
+    if(item.ci && item.ci[0]!=null){
+      const x0=PL+item.ci[0]*CW, x1=PL+item.ci[1]*CW, my=by+bh/2;
+      cx.strokeStyle='#1e293b'; cx.lineWidth=1.5;
+      cx.beginPath(); cx.moveTo(x0,my-3); cx.lineTo(x0,my+3); cx.stroke();
+      cx.beginPath(); cx.moveTo(x1,my-3); cx.lineTo(x1,my+3); cx.stroke();
+      cx.beginPath(); cx.moveTo(x0,my);   cx.lineTo(x1,my);   cx.stroke();
+    }
+    // Value text
+    cx.fillStyle='#374151'; cx.font='bold 10px Segoe UI'; cx.textAlign='left';
+    cx.fillText((item.value*100).toFixed(1)+'%', PL+bw+4, by+bh/2+4);
+  });
+}
+
+function hbar(id, items){
+  // items: [{label, value, color}]
+  const cv = document.getElementById(id);
+  if(!cv) return;
+  const ROW=20, PL=155, PR=55, PT=8, PB=22;
+  const W = cv.parentElement.clientWidth - 32;
+  const H = items.length*ROW + PT + PB;
+  cv.width=W; cv.height=H; cv.style.height=H+'px';
+  const cx = cv.getContext('2d');
+  const CW = W - PL - PR;
+  const max = Math.max(...items.map(d=>d.value||0));
+
+  items.forEach((item,i)=>{
+    const y=PT+i*ROW, bh=ROW-5, by=y+2;
+    cx.fillStyle='#374151'; cx.font='11px Segoe UI'; cx.textAlign='right';
+    const lbl=item.label.length>22?item.label.slice(0,21)+'\u2026':item.label;
+    cx.fillText(lbl, PL-5, by+bh/2+4);
+    if(!item.value) return;
+    const bw=(item.value/max)*CW;
+    cx.fillStyle=item.color+'44';
+    cx.fillRect(PL,by,bw,bh);
+    cx.fillStyle=item.color;
+    cx.fillRect(PL,by,bw,bh);
+    cx.fillStyle='#374151'; cx.font='10px Segoe UI'; cx.textAlign='left';
+    cx.fillText(item.value.toLocaleString(), PL+bw+4, by+bh/2+4);
+  });
+}
+
+function vbarCI(id, items, palette){
+  // items: [{label/type, show/close value, ci}]  vertical grouped
+  const cv = document.getElementById(id);
+  if(!cv) return;
+  const W=cv.parentElement.clientWidth-32, H=cv.height||220;
+  cv.width=W;
+  const cx=cv.getContext('2d');
+  cx.clearRect(0,0,W,H);
+  const PT=24,PB=36,PL=30,PR=10;
+  const CW=W-PL-PR, CH=H-PT-PB;
+  const bw=Math.min(70, CW/items.length*0.55);
+  const slot=CW/items.length;
+
+  // Grid
+  for(let v=0;v<=1;v+=0.2){
+    const y=PT+CH*(1-v);
+    cx.strokeStyle='#f1f5f9'; cx.lineWidth=1;
+    cx.beginPath(); cx.moveTo(PL,y); cx.lineTo(W-PR,y); cx.stroke();
+    cx.fillStyle='#94a3b8'; cx.font='9px Segoe UI'; cx.textAlign='right';
+    cx.fillText((v*100).toFixed(0)+'%', PL-3, y+3);
+  }
+
+  items.forEach((item,i)=>{
+    const vk = item.show_rate!==undefined?'show_rate':'close_rate';
+    const ck = item.show_ci!==undefined?'show_ci':'close_ci';
+    const val=item[vk], ci=item[ck];
+    if(val==null) return;
+    const x=PL+i*slot+slot/2;
+    const bh=CH*val, by=PT+CH-bh;
+    cx.fillStyle=palette[i]||'#0ea5e9';
+    cx.fillRect(x-bw/2,by,bw,bh);
+    // CI
+    if(ci&&ci[0]!=null){
+      const y0=PT+CH*(1-ci[1]), y1=PT+CH*(1-ci[0]);
+      cx.strokeStyle='#1e293b'; cx.lineWidth=1.5;
+      cx.beginPath(); cx.moveTo(x-5,y0); cx.lineTo(x+5,y0); cx.stroke();
+      cx.beginPath(); cx.moveTo(x-5,y1); cx.lineTo(x+5,y1); cx.stroke();
+      cx.beginPath(); cx.moveTo(x,y0);   cx.lineTo(x,y1);   cx.stroke();
+    }
+    cx.fillStyle='#1e293b'; cx.font='bold 10px Segoe UI'; cx.textAlign='center';
+    cx.fillText((val*100).toFixed(1)+'%', x, by-5);
+    const lbl=(item.label||item.type||'').replace('Database Prospect','DB Prospect').replace('-Generated','-Gen');
+    cx.fillStyle='#64748b'; cx.font='10px Segoe UI';
+    cx.fillText(lbl, x, H-PB+14);
+  });
+}
+
+// ── Draw all charts for a tab ─────────────────────────────────────────────────
+function drawAll(tab){
+  const ls = D.lead_sources;
+  const cl = D.clinics;
+  const pt = D.patients;
+  const orig = D.origin;
+
+  if(tab==='lead'){
+    const srSorted=[...ls].filter(d=>d.show_rate!=null).sort((a,b)=>b.show_rate-a.show_rate);
+    hbarCI('cv-sr', srSorted.map(d=>({label:d.category,value:d.show_rate,ci:d.show_ci,color:gCol(d.group)})));
+    const vSorted=[...ls].sort((a,b)=>b.tests-a.tests);
+    hbar('cv-vol', vSorted.map(d=>({label:d.category,value:d.tests,color:gCol(d.group)})));
+  }
+  if(tab==='clinics'){
+    const cSorted=[...cl].filter(d=>d.show_rate!=null).sort((a,b)=>b.show_rate-a.show_rate);
+    hbarCI('cv-csr', cSorted.map(d=>({label:d.name,value:d.show_rate,ci:d.show_ci,color:'#0ea5e9'})));
+    const uSorted=[...cl].sort((a,b)=>b.ha_units-a.ha_units);
+    hbar('cv-cu', uSorted.map(d=>({label:d.name,value:d.ha_units,color:'#8b5cf6'})));
+  }
+  if(tab==='patients'){
+    vbarCI('cv-ptsr', pt.map(d=>({...d,show_rate:d.show_rate,show_ci:d.show_ci})), ['#0ea5e9','#22c55e','#f59e0b']);
+    vbarCI('cv-ptcr', pt.map(d=>({...d,close_rate:d.close_rate,close_ci:d.close_ci})), ['#0ea5e9','#22c55e','#f59e0b']);
+  }
+  if(tab==='origin'){
+    const oa = Object.entries(orig).map(([k,v],i)=>({...v,label:k,color:i===0?'#22c55e':'#f87171'}));
+    vbarCI('cv-osr', oa.map(d=>({...d,show_rate:d.show_rate,show_ci:d.show_ci})), oa.map(d=>d.color));
+    vbarCI('cv-ocr', oa.map(d=>({...d,close_rate:d.close_rate,close_ci:d.close_ci})), oa.map(d=>d.color));
+  }
+}
+
+// ── ANALYSIS & BACKTEST ───────────────────────────────────────────────────────
+
+function renderAnalysis(){
+  const corr = D.correlations;
+  const bt   = D.backtest;
+  const models = bt.models;
+
+  // Which model won? (lowest Brier score)
+  const winner = Object.entries(models).sort((a,b)=>a[1].brier-b[1].brier)[0];
+
+  document.getElementById('p-analysis').innerHTML = `
+    <p class="sec-note">
+      Correlation analysis uses appointment-level Sales Funnel data (n=${f.n(bt.n_train+bt.n_test)} resolved appointments, sample).
+      Backtest: train on appointments before ${bt.cutoff}, test on ${f.n(bt.n_test)} appointments on/after.
+      Actual shows in test period: <strong>${bt.actual_shows}</strong>.
+    </p>
+
+    <div class="section-title" style="font-size:13px;font-weight:600;margin-bottom:12px">
+      Show Rate Drivers &mdash; 95% Wilson CI
+    </div>
+    <div class="corr-grid" id="corr-charts"></div>
+
+    <div class="section-title" style="font-size:13px;font-weight:600;margin:20px 0 10px">
+      Backtest &mdash; Model Comparison
+    </div>
+    <p class="sec-note">
+      Train: ${f.n(bt.n_train)} appointments (before ${bt.cutoff}) &nbsp;&middot;&nbsp;
+      Test: ${f.n(bt.n_test)} appointments &nbsp;&middot;&nbsp;
+      Actual shows: ${bt.actual_shows}<br>
+      Model A = equal-weight from training sample &nbsp;|&nbsp;
+      Model B = recency-weighted (30-day half-life) from training sample &nbsp;|&nbsp;
+      Model C = full JAN&ndash;MAR AJ CSV rates (held out from sample-based training)
+    </p>
+
+    <div style="display:flex;gap:16px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px">
+      <div class="bt-winner">\u2713 Best show model (Brier): ${winner[1].label}</div>
+      ${(()=>{
+        const revEntries = [...Object.entries(models).map(([k,m])=>[k,m.rev_mae]),
+                           ['EV',bt.rev_mae_ev]];
+        const revWinner = revEntries.sort((a,b)=>a[1]-b[1])[0];
+        const revLabel  = revWinner[0]==='EV' ? 'EV/Test' : `Model ${revWinner[0]} (${models[revWinner[0]].label})`;
+        return `<div class="bt-winner" style="background:#ecfdf5;border-left-color:#10b981">\u2713 Best revenue model (MAE): ${revLabel}</div>`;
+      })()}
+    </div>
+
+    <p style="font-size:11px;color:#64748b;margin-bottom:12px">
+      Actual revenue proxy: <strong>${f.$(bt.actual_rev)}</strong>
+      &nbsp;(${bt.actual_sales} sales &times; ${bt.ha_per_sale} HA/sale &times; ASP ${f.$(bt.asp_used)})
+      &nbsp;&middot;&nbsp; Revenue proxy uses global JAN&ndash;MAR ASP &mdash; clinic-level ASP variation not captured.
+    </p>
+
+    <div class="bt-model-grid">
+      ${Object.entries(models).map(([key,m])=>{
+        const isBest = key===winner[0];
+        return `<div class="bt-card ${isBest?'best':''}">
+          <div class="bt-lbl">Model ${key}${isBest?' \u2605':''}</div>
+          <div style="font-size:11px;color:#475569;margin-bottom:8px">${m.label}</div>
+          <div class="bt-val">${m.pred}</div>
+          <div class="bt-sub">predicted shows</div>
+          <div style="margin-top:8px;font-size:11px">
+            <span class="corr-stat">Brier: ${m.brier}</span>
+            <span class="corr-stat">Show MAE: ${m.mae}</span>
+          </div>
+          <div style="margin-top:6px;border-top:1px solid #e2e8f0;padding-top:6px;font-size:11px">
+            <span class="corr-stat" style="color:#6366f1">Rev Pred: ${f.$(m.pred_rev)}</span>
+            <span class="corr-stat" style="color:#e11d48">Rev MAE: ${f.$(m.rev_mae)}</span>
+          </div>
+        </div>`;
+      }).join('')}
+      <div class="bt-card">
+        <div class="bt-lbl">EV/Test</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:8px">Contracted $/test &times; appointments (no show model)</div>
+        <div class="bt-val">${f.$(bt.pred_rev_ev)}</div>
+        <div class="bt-sub">predicted revenue</div>
+        <div style="margin-top:6px;font-size:11px">
+          <span class="corr-stat" style="color:#e11d48">Rev MAE: ${f.$(bt.rev_mae_ev)}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title" style="font-size:13px;font-weight:600;margin:16px 0 8px">Show Accuracy \u2014 By Clinic</div>
+    <div class="twrap">
+      <table id="tbl-bt">
+        <thead><tr>
+          <th data-num="false">Clinic</th><th>Test Appts</th><th>Actual Shows</th>
+          <th>Model A Pred</th><th>Model A Err</th>
+          <th>Model B Pred</th><th>Model B Err</th>
+          <th>Model C Pred</th><th>Model C Err</th>
+        </tr></thead>
+        <tbody>
+          <tr style="background:#f8fafc;font-weight:600">
+            <td>TOTAL</td>
+            <td>${f.n(bt.clinic_rows.reduce((a,r)=>a+r.n,0))}</td>
+            <td>${bt.actual_shows}</td>
+            <td>${models.A.pred}</td>
+            <td>${errCell(models.A.pred-bt.actual_shows)}</td>
+            <td>${models.B.pred}</td>
+            <td>${errCell(models.B.pred-bt.actual_shows)}</td>
+            <td>${models.C.pred}</td>
+            <td>${errCell(models.C.pred-bt.actual_shows)}</td>
+          </tr>
+          ${bt.clinic_rows.map(r=>`<tr>
+            <td>${r.clinic}</td>
+            <td data-v="${r.n}">${r.n}</td>
+            <td data-v="${r.actual}">${r.actual}</td>
+            <td data-v="${r.predA}">${r.predA}</td>
+            <td>${errCell(r.predA-r.actual)}</td>
+            <td data-v="${r.predB}">${r.predB}</td>
+            <td>${errCell(r.predB-r.actual)}</td>
+            <td data-v="${r.predC}">${r.predC}</td>
+            <td>${errCell(r.predC-r.actual)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="section-title" style="font-size:13px;font-weight:600;margin:16px 0 8px">Revenue Accuracy \u2014 By Clinic</div>
+    <div class="twrap">
+      <table id="tbl-bt-rev">
+        <thead><tr>
+          <th data-num="false">Clinic</th>
+          <th>Actual Sales</th><th>Actual Rev (proxy)</th>
+          <th>Model A Rev</th><th>Model A Rev Err</th>
+          <th>Model B Rev</th><th>Model B Rev Err</th>
+          <th>EV/Test Rev</th><th>EV/Test Err</th>
+        </tr></thead>
+        <tbody>
+          <tr style="background:#f8fafc;font-weight:600">
+            <td>TOTAL</td>
+            <td>${bt.actual_sales}</td>
+            <td>${f.$(bt.actual_rev)}</td>
+            <td>${f.$(models.A.pred_rev)}</td>
+            <td>${errRevCell(models.A.pred_rev - bt.actual_rev)}</td>
+            <td>${f.$(models.B.pred_rev)}</td>
+            <td>${errRevCell(models.B.pred_rev - bt.actual_rev)}</td>
+            <td>${f.$(bt.pred_rev_ev)}</td>
+            <td>${errRevCell(bt.pred_rev_ev - bt.actual_rev)}</td>
+          </tr>
+          ${bt.clinic_rows.map(r=>`<tr>
+            <td>${r.clinic}</td>
+            <td data-v="${r.sold}">${r.sold}</td>
+            <td data-v="${r.actual_rev}">${f.$(r.actual_rev)}</td>
+            <td data-v="${r.revA}">${f.$(r.revA)}</td>
+            <td>${errRevCell(r.revA - r.actual_rev)}</td>
+            <td data-v="${r.revB}">${f.$(r.revB)}</td>
+            <td>${errRevCell(r.revB - r.actual_rev)}</td>
+            <td data-v="${r.revEV}">${f.$(r.revEV)}</td>
+            <td>${errRevCell(r.revEV - r.actual_rev)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="fc-method">
+      <strong>Backtest methodology</strong>
+      Predictions use only information available before the test-period cutoff (${bt.cutoff}).
+      Model A: simple show rate by (clinic &times; confirmation status) from training data.
+      Model B: same split but exponentially weighted toward recent training appointments
+      (30-day half-life from cutoff date &mdash; appointments 30 days prior to cutoff get &frac12; the weight of cutoff-day appointments).
+      Model C: full JAN&ndash;MAR clinic-level confirmed/non-confirmed rates from appointment
+      journey CSV &mdash; not trained on this sample, used as the &ldquo;production prior&rdquo; benchmark.
+      Brier score: mean squared error of predicted P(show) vs actual 0/1 (lower = better, max 0.25 = random).
+      <br><br>
+      <strong>Revenue backtest:</strong>
+      Funnel models (A/B/C) predict revenue as p_show &times; ${D.rates.test_rate*100}% tested &times; p_close &times; ${D.rates.ha_per_sale} HA/sale &times; ASP ${f.$(bt.asp_used)},
+      where p_close comes from the same category &rarr; creator-role &rarr; region hierarchy used in the Forecast tab.
+      EV/Test uses contracted $/test from JAN&ndash;MAR Reporting Dimension applied to each test appointment &mdash; no show model required.
+      Actual revenue proxy = actual sales &times; ${bt.ha_per_sale} HA/sale &times; ${f.$(bt.asp_used)} ASP (global average; clinic ASP variation not captured).
+      Revenue accuracy at the clinic level is noisier than region total due to small sale counts.
+    </div>`;
+
+  makeSortable('tbl-bt');
+  makeSortable('tbl-bt-rev');
+  drawCorrCharts();
+}
+
+function errCell(err){
+  const cls = err>0.3?'err-pos':err<-0.3?'err-neg':'err-zero';
+  const sign = err>0?'+':'';
+  return `<span class="${cls}">${sign}${err.toFixed(1)}</span>`;
+}
+function errRevCell(err){
+  // Revenue errors in dollars — threshold ±$500 for colour coding
+  const cls = err>500?'err-pos':err<-500?'err-neg':'err-zero';
+  const sign = err>0?'+':'';
+  return `<span class="${cls}">${sign}${f.$(Math.round(err))}</span>`;
+}
+
+function drawCorrCharts(){
+  document.getElementById('corr-charts').innerHTML = D.correlations.map((corr,ci)=>{
+    const sig = corr.pval!=null && corr.pval<0.05;
+    const stats = [];
+    if(corr.or!=null)        stats.push(`<span class="corr-stat">OR: ${corr.or} [${corr.or_ci[0]}\u2013${corr.or_ci[1]}]</span>`);
+    if(corr.z!=null)         stats.push(`<span class="corr-stat">z: ${corr.z}</span>`);
+    if(corr.pval!=null)      stats.push(`<span class="corr-stat ${sig?'sig':'ns'}">${sig?'p < 0.05':'p \u2265 0.05'} (p=${corr.pval})</span>`);
+    if(corr.pearson_r!=null) stats.push(`<span class="corr-stat">r: ${corr.pearson_r}</span>`);
+    return `<div class="corr-card">
+      <h3>${corr.feature}</h3>
+      <div class="corr-note">${corr.note}</div>
+      <div style="margin-bottom:6px">${stats.join('')}</div>
+      <canvas id="cv-corr-${ci}"></canvas>
+    </div>`;
+  }).join('');
+
+  // Draw each chart after DOM is ready
+  D.correlations.forEach((corr,ci)=>{
+    const items = corr.levels.map(lv=>({
+      label: lv.label,
+      value: lv.show_rate,
+      ci:    lv.ci,
+      color: '#0ea5e9',
+      n:     lv.n,
+    }));
+    hbarCI(`cv-corr-${ci}`, items);
+  });
+}
+
+// ── FORECAST ──────────────────────────────────────────────────────────────────
+
+function renderForecast(){
+  document.getElementById('p-forecast').innerHTML = `
+    <p class="sec-note">Upload next week's scheduled appointments (CSV, same Looker export format as Sales Funnel).
+    Predictions use JAN\u2013MAR historical show & close rates by lead source and confirmation status.</p>
+    <div class="drop-zone" id="drop-zone"
+         ondragover="event.preventDefault();this.classList.add('over')"
+         ondragleave="this.classList.remove('over')"
+         ondrop="handleDrop(event)">
+      <div class="drop-title">Drop weekly appointments CSV here</div>
+      <div class="drop-sub">
+        Export from Looker: same columns as Sales Funnel, filtered to scheduled/active appointments only.<br>
+        Confirmation status and lead source will sharpen the prediction.
+      </div>
+      <button class="btn-up" onclick="document.getElementById('fc-input').click()">Choose File</button>
+      <input type="file" id="fc-input" accept=".csv" style="display:none" onchange="handleFile(this.files[0])">
+      <div class="fc-file-info" id="fc-file-info"></div>
+    </div>
+    <div id="fc-results"></div>
+    <div id="fc-history"></div>`;
+}
+
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('over');
+  const file = e.dataTransfer.files[0];
+  if(file) handleFile(file);
+}
+
+function handleFile(file){
+  if(!file || !file.name.endsWith('.csv')){
+    alert('Please upload a CSV file.'); return;
+  }
+  document.getElementById('fc-file-info').textContent = '\u2714 ' + file.name;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const rows = parseCSV(e.target.result);
+      const preds = predictAppointments(rows);
+      showForecastResults(preds, file.name);
+    } catch(err) {
+      document.getElementById('fc-results').innerHTML =
+        `<div class="fc-warn">Error parsing file: ${err.message}. Check that the file is a CSV with the Sales Funnel column headers.</div>`;
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ── CSV parser ────────────────────────────────────────────────────────────────
+function parseCSVLine(line){
+  const cells=[]; let cell='', inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){inQ=!inQ;}
+    else if(c===','&&!inQ){cells.push(cell.trim());cell='';}
+    else{cell+=c;}
+  }
+  cells.push(cell.trim());
+  return cells;
+}
+
+// ── PHI column patterns — never mapped to row objects ────────────────────────
+// Columns whose headers match these patterns are silently ignored during parsing.
+// This ensures patient names, chart numbers, DOBs, and contact info never enter
+// JS memory, even if present in the uploaded CSV.
+function parseCSV(text){
+  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n').filter(l=>l.trim());
+  if(lines.length<2) throw new Error('File appears empty');
+  const raw_headers = parseCSVLine(lines[0]);
+  const headers = raw_headers.map(h=>h.toLowerCase().replace(/[\[\]#$%]/g,'').trim());
+
+  const find = (...pats) => {
+    for(const p of pats){
+      const i = headers.findIndex(h=>h.includes(p));
+      if(i>=0) return i;
+    }
+    return -1;
+  };
+
+  const idx = {
+    clinic:         find('clinic name'),
+    patient_type:   find('historical contact type code 2','contact type code 2'),
+    appt_status:    find('appointment status'),
+    outcome:        find('appointment outcome'),
+    created_by:     find('created-by logged role','created by logged role'),
+    campaign:       find('campaign activity code and name','campaign activity'),
+    confirmed_24hr: find('24hr confirmation date','24hr confirmation'),
+    confirmed_72hr: find('72hr confirmation date','72hr confirmation'),
+    start_date:     find('start date'),
+    created_date:   find('created date'),
+    biz_days:       find('business days duration','business days'),
+  };
+
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    if(!lines[i].trim()) continue;
+    const cells=parseCSVLine(lines[i]);
+    const row={};
+    for(const [key,col] of Object.entries(idx)){
+      row[key] = col>=0 ? (cells[col]||'') : '';
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+// ── Campaign → category (JS mirror of Python keyword rules) ──────────────────
+function campaignToCategory(name){
+  if(!name) return null;
+  const n=name.toLowerCase();
+  const rules=[
+    [/walk.?in|walk in|clinic only|general.*clinic/,'Walk In'],
+    [/service(?!.*conv)/,'Walk In'],
+    [/physician|medical ref/,'Medical Referral'],
+    [/patient.?ref|referral.*(patient|wom)|word of mouth/,'WOM Referral'],
+    [/wellness/,'Wellness Referral'],
+    [/fitting fee/,'Fitting Fee'],
+    [/\bevent/,'Events'],
+    [/service.?conv|conversion/,'Service Conversion'],
+    [/direct.?mail|oow|out.?of.?warrant|dm follow|tns.*direct/,'DM'],
+    [/google|paid.?search/,'Paid Search'],
+    [/social media|facebook|instagram/,'Social'],
+    [/organic.?search|\bseo\b/,'SEO'],
+    [/verified digital|hearinglife.*website|digital.*website|internet search|digital.*search|ag7z|\bweb\b/,'Direct Web'],
+    [/insurance|inbound/,'Inbound Call'],
+    [/psc|tns(?!.*direct)|recall|proactive|follow.?up|no.?show.*cancel|outbound/,'Outbound Call'],
+    [/\bdisplay\b/,'Display'],
+    [/\bemail\b/,'Email'],
+    [/\btv\b|television|cable/,'TV'],
+    [/affiliate/,'Affiliate'],
+    [/sms|text message/,'SMS / Text Message'],
+    [/door drop/,'Door Drop'],
+    [/print|newspaper|magazine/,'Print Ad'],
+  ];
+  for(const [re,cat] of rules) if(re.test(n)) return cat;
+  return null;
+}
+
+// ── Date helpers ─────────────────────────────────────────────────────────────
+// new Date("2026-04-07") parses as UTC midnight → local getDay() shifts by timezone offset.
+// Always parse date-only strings as LOCAL time by constructing from parts.
+function parseDateLocal(s){
+  if(!s) return null;
+  // Handle "2026-04-07", "2026-04-07 09:00", "2026-04-07T09:00:00", "04/07/2026" etc.
+  const iso = /^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/;
+  const mdy = /^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/;
+  let m;
+  if((m=iso.exec(s)))   return new Date(+m[1], +m[2]-1, +m[3]);
+  if((m=mdy.exec(s)))   return new Date(+m[3], +m[1]-1, +m[2]);
+  return new Date(s); // fallback (for ISO datetime strings with time zone info)
+}
+
+// ── Prediction engine ─────────────────────────────────────────────────────────
+const ACTIVE_STATUSES = new Set(['scheduled','confirmed','confirmed 24 hours','confirmed 72 hours',
+  'not confirmed - attempted','welcome call - completed','arrived','active']);
+
+function predictAppointments(rows){
+  // Pre-compute SDF% lookup by category (built once, used per appointment)
+  const _sdfMap = {};
+  for(const c of (D.revenue_timing?.categories||[])){
+    if(c.sdf_pct != null) _sdfMap[c.category] = c.sdf_pct;
+  }
+  const _defSdf = D.revenue_timing?.sdf_pct ?? 0.49;
+
+  // Include all non-completed appointments.
+  // Cancelled tests still count in the EV/test denominator — the rate was calibrated on ALL
+  // scheduled tests (active + cancelled). Exclude only Completed (already happened this period).
+  const eligible = rows.filter(r=>{
+    const s=(r.appt_status||'').toLowerCase().trim();
+    if(!s) return true; // unknown status — include
+    return !s.startsWith('complet');  // keep active AND cancelled; drop completed only
+  });
+
+  return eligible.map(row=>{
+    const clinic     = row.clinic||'';
+    const created_by = row.created_by||'';
+    const campaign   = row.campaign||'';
+    const start_date = row.start_date||'';
+    const created_date = row.created_date||'';
+    const biz_days   = row.biz_days||'';
+
+    const status     = (row.appt_status||'').toLowerCase().trim();
+    const is_cancelled = status.startsWith('cancel');
+    // Cancelled can't be confirmed; short-circuit to avoid false positive
+    const confirmed  = !is_cancelled &&
+                   ((row.confirmed_24hr&&row.confirmed_24hr.trim()!==''&&row.confirmed_24hr.trim()!=='NaT')
+                   || (row.confirmed_72hr&&row.confirmed_72hr.trim()!==''&&row.confirmed_72hr.trim()!=='NaT'));
+
+    // ── Show probability ──────────────────────────────────────────────────────
+    // Cancelled: p_show = 0 (won't show). EV/test still applies at full rate because
+    // the historical rate was computed with all scheduled tests in the denominator.
+    const cr = D.rates.clinics[clinic];
+    let p_show;
+    if(is_cancelled){
+      p_show = 0;
+    } else if(cr && cr.confirmed!=null && cr.nonconfirmed!=null){
+      p_show = confirmed ? cr.confirmed : cr.nonconfirmed;
+    } else {
+      p_show = confirmed ? D.rates.region.confirmed : D.rates.region.nonconfirmed;
+    }
+
+    // ── Close probability ─────────────────────────────────────────────────────
+    // Use most specific available: campaign → category → creator role → region
+    const cat = D.rates.campaign_map[campaign] || campaignToCategory(campaign);
+    const catData = cat ? D.rates.categories[cat] : null;
+    const is_clinic_gen = ['Dispenser','Clinic Assistant'].includes(created_by);
+    const group = catData ? catData.group : (is_clinic_gen ? 'clinic' : (created_by ? 'external' : 'unknown'));
+
+    let p_close;
+    if(catData && catData.close!=null)           p_close = catData.close;
+    else if(group==='clinic')                    p_close = D.rates.origin.clinic.close;
+    else if(group==='external')                  p_close = D.rates.origin.external.close;
+    else                                         p_close = D.rates.region.close;
+
+    const p_sale = p_show * D.rates.aidable_rate * p_close;
+
+    // ── Revenue — Funnel method ───────────────────────────────────────────────
+    // If this appointment shows: E[revenue | show] = test_rate × aidable_of_tested × close × ha × ASP
+    // = aidable_rate × close × ha × ASP  (aidable_rate = test_rate × aidable_of_tested = 0.72)
+    // Propagates show-rate uncertainty through to a revenue CI in showForecastResults.
+    const rev_per_show = D.rates.aidable_rate * p_close * D.rates.ha_per_sale * D.rates.asp;
+
+    // ── Revenue — EV/test method ──────────────────────────────────────────────
+    // Directly-observed contracted_revenue ÷ tests_scheduled from historical RD.
+    // More robust: collapses full funnel to a single $/test without compounding
+    // test_rate × close_rate × ha_per_sale uncertainty.
+    const _ev = D.rates.ev_per_test;
+    const _eg = D.rates.ev_per_group;
+    const ev_test = (cat && _ev[cat] != null) ? _ev[cat]
+                  : (_eg[group] != null)       ? _eg[group]
+                  :                              _eg.overall;
+
+    // ── Day of week ───────────────────────────────────────────────────────────
+    const _d = parseDateLocal(start_date);
+    const dow = (!_d || isNaN(_d.getTime())) ? 'Unknown'
+              : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][_d.getDay()];
+
+    // ── SDF% for this appointment's category ─────────────────────────────────
+    const _sdfEntry = _sdfMap[cat||''];
+    const sdf_pct = _sdfEntry != null ? _sdfEntry : _defSdf;
+
+    return {
+      clinic, group, cat: cat||'Unknown', confirmed, is_cancelled,
+      patient_type: row.patient_type||'',
+      start_date, created_date, biz_days,
+      p_show:      Math.min(1, Math.max(0, p_show)),
+      p_sale:      Math.min(1, Math.max(0, p_sale)),
+      p_close,
+      rev_per_show,   // E[revenue | shows] — used for funnel revenue CI
+      ev_test,        // historical $/test — EV/test method
+      dow,            // 'Mon'|'Tue'|'Wed'|'Thu'|'Fri'|other
+      sdf_pct,        // category-weighted same-day-fit rate
+    };
+  });
+}
+
+// ── Poisson-binomial CI ───────────────────────────────────────────────────────
+// Correct CI for a sum of independent Bernoulli trials with different p's
+function pbCI(ps){
+  const mean = ps.reduce((a,p)=>a+p, 0);
+  const std  = Math.sqrt(ps.reduce((a,p)=>a+p*(1-p), 0));
+  return {
+    mean: Math.round(mean*10)/10,
+    lo:   Math.max(0, Math.round((mean-1.96*std)*10)/10),
+    hi:   Math.round((mean+1.96*std)*10)/10,
+  };
+}
+
+// ── Daily revenue forecast ────────────────────────────────────────────────────
+const WEEK_DAYS = ['Mon','Tue','Wed','Thu','Fri'];
+
+function computeDailyRevenue(preds){
+  // Close-rate uncertainty: scale contracted mean up/down by regional close CI bounds
+  const closeMean = D.totals.close_rate || 0.425;
+  const closeLo   = D.totals.close_ci?.[0] ?? closeMean * 0.88;
+  const closeHi   = D.totals.close_ci?.[1] ?? closeMean * 1.12;
+  const clScLo = closeLo / closeMean;
+  const clScHi = closeHi / closeMean;
+
+  // ── Same-week creation expected adds per appointment day ─────────────────────
+  // For each clinic in the uploaded file, use clinic-specific rate if available;
+  // fall back to 50% of regional average for low-volume clinics (None in data).
+  // Then sum across all clinics in the file and add regional for any clinic
+  // not in the historical data at all.
+  const swData = D.same_week_creation || {};
+  const swReg  = swData.region || {};
+  const swClin = swData.by_clinic || {};
+  // Unique clinics in the file
+  const fileClinics = [...new Set(preds.map(p=>p.clinic).filter(Boolean))];
+
+  const daily = {};
+  for(const day of WEEK_DAYS){
+    const dp = preds.filter(p => p.dow === day);
+    // Revenue mean & show-uncertainty SD
+    const mean    = dp.reduce((a,p)=>a + p.p_show * p.rev_per_show, 0);
+    const showVar = dp.reduce((a,p)=>a + p.p_show*(1-p.p_show)*p.rev_per_show*p.rev_per_show, 0);
+    const showSD  = Math.sqrt(showVar);
+    // Revenue-weighted SDF% for this day's mix
+    const sdf = mean > 0
+      ? dp.reduce((a,p)=>a + p.p_show * p.rev_per_show * p.sdf_pct, 0) / mean
+      : (D.revenue_timing?.sdf_pct ?? 0.49);
+
+    // Same-week expected test additions for this appointment day
+    // Sum clinic-level estimates; use 50% of regional where clinic not in history
+    let sw_cg = 0, sw_ext = 0;
+    for(const cl of fileClinics){
+      const clData = swClin[cl];
+      if(clData === null){
+        // Low-volume clinic: 50% of regional average
+        sw_cg  += (swReg[day]?.clinic_gen     || 0) * 0.5;
+        sw_ext += (swReg[day]?.non_clinic_gen || 0) * 0.5;
+      } else if(clData && clData[day]){
+        sw_cg  += clData[day].clinic_gen     || 0;
+        sw_ext += clData[day].non_clinic_gen || 0;
+      } else {
+        // Clinic not in historical data at all — use 50% of regional
+        sw_cg  += (swReg[day]?.clinic_gen     || 0) * 0.5;
+        sw_ext += (swReg[day]?.non_clinic_gen || 0) * 0.5;
+      }
+    }
+    // If no clinics in file yet, fall back to full regional
+    if(!fileClinics.length){
+      sw_cg  = swReg[day]?.clinic_gen     || 0;
+      sw_ext = swReg[day]?.non_clinic_gen || 0;
+    }
+
+    // EV revenue from expected same-week creates
+    const sw_ev_cg  = Math.round(sw_cg  * (D.rates.ev_per_group?.clinic   || 0));
+    const sw_ev_ext = Math.round(sw_ext * (D.rates.ev_per_group?.external || 0));
+
+    daily[day] = {
+      n: dp.filter(p=>!p.is_cancelled).length,
+      n_cancelled: dp.filter(p=>p.is_cancelled).length,
+      contracted: {
+        lo:   Math.max(0, Math.round((mean - 1.96*showSD) * clScLo)),
+        mean: Math.round(mean),
+        hi:   Math.round((mean + 1.96*showSD) * clScHi),
+      },
+      sdf,
+      sw_cg:  Math.round(sw_cg  * 10) / 10,   // expected clinic-gen additions
+      sw_ext: Math.round(sw_ext * 10) / 10,   // expected non-clinic additions
+      sw_ev_cg, sw_ev_ext,                     // EV revenue from those adds
+    };
+  }
+  return daily;
+}
+
+function renderDailyRevSection(preds){
+  const daily = computeDailyRevenue(preds);
+  window._dailyContracted = daily;
+
+  const closeMean = D.totals.close_rate || 0.425;
+  const closeLo   = D.totals.close_ci?.[0] ?? closeMean * 0.88;
+  const closeHi   = D.totals.close_ci?.[1] ?? closeMean * 1.12;
+
+  document.getElementById('fc-daily').innerHTML = `
+    <div class="section-title" style="font-size:13px;font-weight:600;margin:20px 0 8px">
+      Daily Revenue Forecast
+    </div>
+    <p class="sec-note">
+      <strong>Contracted</strong> = new sales committed on each appointment day (funnel model).
+      <strong>Invoiced</strong> = contracted &times; SDF% (same-day fit) + delivery of prior-period orders entered below.
+      Range uses show-rate Poisson-binomial uncertainty (&plusmn;1.96&sigma;) combined with
+      close-rate CI [${f.pct(closeLo)}&ndash;${f.pct(closeHi)}] vs mean ${f.pct(closeMean)}.
+    </p>
+
+    <div style="background:#fff;border-radius:8px;padding:14px 18px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:14px">
+      <div style="font-size:10px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">
+        Prior-Period Fitting Deliveries &mdash; enter exact invoiced revenue ($) per day
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+        ${WEEK_DAYS.map(d=>`
+          <div style="display:flex;flex-direction:column;gap:3px;align-items:center">
+            <label style="font-size:10px;color:#64748b;font-weight:600">${d}</label>
+            <div style="display:flex;align-items:center;gap:2px">
+              <span style="font-size:12px;color:#64748b;font-weight:600">$</span>
+              <input id="fit-${d}" type="number" min="0" step="100" value="0"
+                style="width:72px;padding:5px;border:1px solid #d1d5db;border-radius:6px;text-align:right;font-size:13px;font-weight:600"
+                oninput="updateDailyInvoiced()">
+            </div>
+          </div>`).join('')}
+        <div style="width:1px;height:36px;background:#e2e8f0;align-self:center"></div>
+        <div style="display:flex;flex-direction:column;gap:3px;align-items:center">
+          <label style="font-size:10px;color:#64748b;font-weight:600">Week&nbsp;(unscheduled&nbsp;fittings)</label>
+          <div style="display:flex;align-items:center;gap:2px">
+            <span style="font-size:12px;color:#64748b;font-weight:600">$</span>
+            <input id="fit-week" type="number" min="0" step="100" value="0"
+              style="width:90px;padding:5px;border:1px solid #d1d5db;border-radius:6px;text-align:right;font-size:13px;font-weight:600"
+              oninput="updateDailyInvoiced()">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="twrap" style="overflow-x:auto;margin-bottom:6px">
+      <table style="min-width:640px">
+        <thead>
+          <tr style="background:#f8fafc">
+            <th data-num="false" style="min-width:140px"></th>
+            ${WEEK_DAYS.map(d=>{
+              const can = daily[d].n_cancelled>0 ? `<span style="color:#dc2626"> +${daily[d].n_cancelled}✗</span>` : '';
+              const sw  = daily[d].sw_cg + daily[d].sw_ext;
+              const swNote = sw>0 ? `<div style="font-size:9px;color:#7c3aed;margin-top:1px">+${sw.toFixed(1)} same-wk</div>` : '';
+              return `<th>${d}
+                <div style="font-size:9px;font-weight:400;color:#94a3b8;margin-top:1px">${daily[d].n} active${can}</div>
+                ${swNote}
+              </th>`;
+            }).join('')}
+            <th>Week&nbsp;Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Same-week creation rows -->
+          <tr>
+            <td colspan="${WEEK_DAYS.length+2}"
+                style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+                       color:#7c3aed;background:#faf5ff;padding:5px 10px;border-bottom:none">
+              Expected Same-Week Test Additions
+              <span style="font-weight:400;font-size:9px">(historical avg · not yet in file)</span>
+            </td>
+          </tr>
+          <tr style="background:#faf5ff">
+            <td style="font-size:10px;color:#7c3aed;padding-left:18px">Clinic-gen</td>
+            ${WEEK_DAYS.map(d=>`<td style="font-size:11px;color:#7c3aed">
+              ${daily[d].sw_cg.toFixed(1)}
+              <div style="font-size:8px;color:#a78bfa">${f.$(daily[d].sw_ev_cg)}</div>
+            </td>`).join('')}
+            <td id="wk-sw-cg" style="font-size:11px;color:#7c3aed"></td>
+          </tr>
+          <tr style="background:#faf5ff">
+            <td style="font-size:10px;color:#7c3aed;padding-left:18px">Non-clinic</td>
+            ${WEEK_DAYS.map(d=>`<td style="font-size:11px;color:#7c3aed">
+              ${daily[d].sw_ext.toFixed(1)}
+              <div style="font-size:8px;color:#a78bfa">${f.$(daily[d].sw_ev_ext)}</div>
+            </td>`).join('')}
+            <td id="wk-sw-ext" style="font-size:11px;color:#7c3aed"></td>
+          </tr>
+          <tr><td colspan="${WEEK_DAYS.length+2}" style="padding:0;height:6px;background:#f1f5f9"></td></tr>
+
+          <!-- Contracted rows -->
+          <tr>
+            <td colspan="${WEEK_DAYS.length+2}"
+                style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+                       color:#15803d;background:#f0fdf4;padding:5px 10px;border-bottom:none">
+              Contracted Revenue &nbsp;<span style="font-weight:400;font-size:9px">(scheduled appointments only)</span>
+            </td>
+          </tr>
+          <tr style="background:#f0fdf4">
+            <td style="font-size:11px;color:#15803d;padding-left:18px">&#9650; High</td>
+            ${WEEK_DAYS.map(d=>`<td style="color:#15803d">${f.$(daily[d].contracted.hi)}</td>`).join('')}
+            <td id="wk-con-hi" style="font-weight:600;color:#15803d"></td>
+          </tr>
+          <tr style="background:#f0fdf4">
+            <td style="font-weight:700;padding-left:18px">Most Likely</td>
+            ${WEEK_DAYS.map(d=>`<td style="font-weight:700">${f.$(daily[d].contracted.mean)}</td>`).join('')}
+            <td id="wk-con-mean" style="font-weight:700"></td>
+          </tr>
+          <tr style="background:#f0fdf4">
+            <td style="font-size:11px;color:#94a3b8;padding-left:18px">&#9660; Low</td>
+            ${WEEK_DAYS.map(d=>`<td style="color:#94a3b8">${f.$(daily[d].contracted.lo)}</td>`).join('')}
+            <td id="wk-con-lo" style="color:#94a3b8"></td>
+          </tr>
+          <tr><td colspan="${WEEK_DAYS.length+2}" style="padding:0;height:6px;background:#f1f5f9"></td></tr>
+
+          <!-- Invoiced rows -->
+          <tr>
+            <td colspan="${WEEK_DAYS.length+2}"
+                style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+                       color:#1d4ed8;background:#eff6ff;padding:5px 10px;border-bottom:none">
+              Invoiced Revenue &nbsp;<span style="font-weight:400;font-size:9px">(contracted &times; SDF% + fitting inputs)</span>
+            </td>
+          </tr>
+          <tr style="background:#eff6ff">
+            <td style="font-size:11px;color:#1d4ed8;padding-left:18px">&#9650; High</td>
+            ${WEEK_DAYS.map(d=>`<td id="inv-${d}-hi" style="color:#1d4ed8"></td>`).join('')}
+            <td id="wk-inv-hi" style="font-weight:600;color:#1d4ed8"></td>
+          </tr>
+          <tr style="background:#eff6ff">
+            <td style="font-weight:700;padding-left:18px">Most Likely</td>
+            ${WEEK_DAYS.map(d=>`<td id="inv-${d}-mean" style="font-weight:700"></td>`).join('')}
+            <td id="wk-inv-mean" style="font-weight:700"></td>
+          </tr>
+          <tr style="background:#eff6ff">
+            <td style="font-size:11px;color:#94a3b8;padding-left:18px">&#9660; Low</td>
+            ${WEEK_DAYS.map(d=>`<td id="inv-${d}-lo" style="color:#94a3b8"></td>`).join('')}
+            <td id="wk-inv-lo" style="color:#94a3b8"></td>
+          </tr>
+          <tr><td colspan="${WEEK_DAYS.length+2}" style="padding:0;height:6px;background:#f1f5f9"></td></tr>
+
+          <!-- Cancellation / return adjustments — week total only -->
+          <tr>
+            <td colspan="${WEEK_DAYS.length+2}"
+                style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+                       color:#b45309;background:#fffbeb;padding:5px 10px;border-bottom:none">
+              Week Adjustments &nbsp;<span style="font-weight:400;font-size:9px">(applied to totals only — too much day-level variance)</span>
+            </td>
+          </tr>
+          <tr style="background:#fffbeb">
+            <td style="font-size:10px;color:#b45309;padding-left:18px"
+                title="Contracted × (1 − invoice_ratio) — historical rate of contracted revenue that doesn't convert to invoiced (${f.pct(PIPELINE_NONINVOICE_RATE)} YTD)">
+              &minus; Non-invoiced contracted (${f.pct(PIPELINE_NONINVOICE_RATE)} of contracted)
+            </td>
+            ${WEEK_DAYS.map(()=>`<td style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>`).join('')}
+            <td id="wk-adj-cancel" style="color:#b45309;font-weight:600"></td>
+          </tr>
+          <tr style="background:#fffbeb">
+            <td style="font-size:10px;color:#b45309;padding-left:18px" title="Invoiced × 6% — post-delivery returns/cancellations">
+              &minus; Post-delivery returns (6% of invoiced)
+            </td>
+            ${WEEK_DAYS.map(()=>`<td style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>`).join('')}
+            <td id="wk-adj-returns" style="color:#b45309;font-weight:600"></td>
+          </tr>
+          <tr style="background:#fef3c7;border-top:2px solid #fcd34d">
+            <td style="font-weight:700;padding-left:18px;font-size:12px">Net Invoiced (adj.)</td>
+            ${WEEK_DAYS.map(()=>`<td style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>`).join('')}
+            <td id="wk-inv-net" style="font-weight:700;font-size:13px;color:#1a1a2e"></td>
+          </tr>
+
+          <!-- SDF row -->
+          <tr>
+            <td style="font-size:10px;color:#94a3b8;padding-left:18px">SDF% (revenue-wtd by appt mix)</td>
+            ${WEEK_DAYS.map(d=>`<td style="font-size:10px;color:#94a3b8">${f.pct(daily[d].sdf)}</td>`).join('')}
+            <td style="font-size:10px;color:#94a3b8">${f.pct(D.revenue_timing?.sdf_pct)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sec-note">
+      <strong>Same-week adds:</strong> historical average tests created during the week for each appointment day
+      (clinic-gen / non-clinic-gen split). Per-clinic rates used where &ge;4 weeks of history; otherwise 50% of regional average.
+      EV revenue shown in grey below each count.<br>
+      <strong>Adjustments (week totals only):</strong>
+      Non-invoiced = contracted &times; (1 &minus; invoice_ratio) — historical rate of contracted that doesn't convert to invoiced within the period (~${f.pct(PIPELINE_NONINVOICE_RATE)} YTD).
+      Returns = invoiced &times; 6% (post-delivery YTD return rate).
+      Net Invoiced = invoiced &minus; returns.
+    </p>`;
+
+  updateDailyInvoiced();
+
+  // ── Clinic weekly drill-down ─────────────────────────────────────────────────
+  // Build per-clinic, per-day breakdown
+  const _cdd = {};
+  for(const p of preds){
+    if(!_cdd[p.clinic]){
+      _cdd[p.clinic] = {};
+      for(const d of WEEK_DAYS) _cdd[p.clinic][d] = {n:0,active:0,ev:0,fMean:0,fVar:0};
+    }
+    if(WEEK_DAYS.includes(p.dow)){
+      const cd = _cdd[p.clinic][p.dow];
+      cd.n++;
+      if(!p.is_cancelled) cd.active++;
+      cd.ev    += p.ev_test;
+      cd.fMean += p.p_show * p.rev_per_show;
+      cd.fVar  += p.p_show * (1-p.p_show) * p.rev_per_show**2;
+    }
+  }
+  const _clinicNames = Object.keys(_cdd).sort((a,b)=>{
+    return WEEK_DAYS.reduce((s,d)=>s+_cdd[b][d].n,0) - WEEK_DAYS.reduce((s,d)=>s+_cdd[a][d].n,0);
+  });
+
+  const _clinicDrillRows = _clinicNames.map(clinic => {
+    const dayCells = WEEK_DAYS.map(day => {
+      const cd = _cdd[clinic][day];
+      if(!cd.n) return `<td style="color:#e2e8f0;text-align:center">—</td>`;
+      const cancel = cd.n - cd.active;
+      const cNote  = cancel>0 ? `<span style="color:#dc2626;font-size:8px"> ${cancel}✗</span>` : '';
+      const ev     = Math.round(cd.ev);
+      return `<td style="text-align:center;font-size:11px">
+        <span style="font-weight:600">${cd.active}${cNote}</span>
+        <div style="font-size:9px;color:#64748b">${f.$(ev)}</div>
+      </td>`;
+    }).join('');
+    const totActive = WEEK_DAYS.reduce((s,d)=>s+_cdd[clinic][d].active,0);
+    const totCan    = WEEK_DAYS.reduce((s,d)=>s+_cdd[clinic][d].n-_cdd[clinic][d].active,0);
+    const totEV     = Math.round(WEEK_DAYS.reduce((s,d)=>s+_cdd[clinic][d].ev,0));
+    const totFM     = Math.round(WEEK_DAYS.reduce((s,d)=>s+_cdd[clinic][d].fMean,0));
+    const totFS     = Math.sqrt(WEEK_DAYS.reduce((s,d)=>s+_cdd[clinic][d].fVar,0));
+    const totFL     = Math.max(0,Math.round(totFM-1.96*totFS));
+    const totFH     = Math.round(totFM+1.96*totFS);
+    const cNote     = totCan>0 ? `<span style="color:#dc2626;font-size:8px"> ${totCan}✗</span>` : '';
+    return `<tr>
+      <td style="font-size:11px;font-weight:600;white-space:nowrap">${clinic}</td>
+      ${dayCells}
+      <td style="font-weight:600;border-left:2px solid #e2e8f0;text-align:center;font-size:11px">
+        ${totActive}${cNote}
+        <div style="font-size:9px;color:#0284c7">${f.$(totEV)}</div>
+        <div style="font-size:8px;color:#94a3b8">${f.$(totFL)}\u2013${f.$(totFH)}</div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const _drillDiv = document.createElement('div');
+  _drillDiv.style.marginTop = '14px';
+  _drillDiv.innerHTML = `
+    <div class="section-title" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'"
+      style="font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:4px;user-select:none">
+      <span id="fc-drill-arrow" style="color:#0ea5e9;font-size:10px">&#9654;</span>
+      Clinic Weekly Breakdown
+      <span style="font-size:10px;color:#94a3b8;font-weight:400">(click to expand)</span>
+    </div>
+    <div id="fc-drill-body" style="display:none">
+      <p class="sec-note" style="margin-bottom:8px">
+        Active tests per day (red = cancelled), EV/test revenue below count.
+        Weekly total: blue = EV/test, grey range = funnel 95% CI.
+        Less reliable for small-volume clinics.
+      </p>
+      <div class="twrap" style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th data-num="false">Clinic</th>
+            ${WEEK_DAYS.map(d=>`<th>${d}</th>`).join('')}
+            <th>Weekly Total</th>
+          </tr></thead>
+          <tbody>${_clinicDrillRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  _drillDiv.querySelector('.section-title').addEventListener('click', ()=>{
+    const body  = document.getElementById('fc-drill-body');
+    const arrow = document.getElementById('fc-drill-arrow');
+    const open  = body.style.display !== 'none';
+    body.style.display  = open ? 'none' : '';
+    arrow.innerHTML     = open ? '&#9654;' : '&#9660;';
+  });
+  document.getElementById('fc-daily').appendChild(_drillDiv);
+}
+
+// Return rate (YTD average, applied at week level only)
+const INVOICED_RETURN_RATE = 0.06;  // post-delivery returns on invoiced revenue
+// Pipeline not-invoiced rate: derived from historical contracted → invoiced ratio.
+// contracted × (1 − invoice_ratio) = expected contracted revenue that won't convert to invoiced.
+// ~2.7% at current YTD rates (invoice_ratio ≈ 0.973).
+const PIPELINE_NONINVOICE_RATE = 1 - (D.revenue_timing?.invoice_ratio ?? 0.973);
+
+function updateDailyInvoiced(){
+  if(!window._dailyContracted) return;
+  // Fitting inputs are exact dollar amounts (prior-period orders already invoiced)
+  let wCLo=0, wCMean=0, wCHi=0, wILo=0, wIMean=0, wIHi=0;
+  let wSwCg=0, wSwExt=0;
+
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=f.$(v); };
+
+  for(const day of WEEK_DAYS){
+    const dc = window._dailyContracted[day];
+    if(!dc) continue;
+    const fitRev  = Math.max(0, Math.round(parseFloat(document.getElementById('fit-'+day)?.value)||0));
+    const iLo     = Math.round(dc.contracted.lo   * dc.sdf) + fitRev;
+    const iMean   = Math.round(dc.contracted.mean  * dc.sdf) + fitRev;
+    const iHi     = Math.round(dc.contracted.hi   * dc.sdf) + fitRev;
+    set('inv-'+day+'-lo',   iLo);
+    set('inv-'+day+'-mean', iMean);
+    set('inv-'+day+'-hi',   iHi);
+    wCLo   += dc.contracted.lo;   wCMean += dc.contracted.mean; wCHi   += dc.contracted.hi;
+    wILo   += iLo;                wIMean += iMean;              wIHi   += iHi;
+    wSwCg  += dc.sw_ev_cg  || 0;
+    wSwExt += dc.sw_ev_ext || 0;
+  }
+
+  // Weekly unscheduled fittings — invoiced only (exact $ input)
+  const wFitRev = Math.max(0, Math.round(parseFloat(document.getElementById('fit-week')?.value)||0));
+  wILo += wFitRev; wIMean += wFitRev; wIHi += wFitRev;
+
+  set('wk-con-lo',  wCLo);  set('wk-con-mean', wCMean); set('wk-con-hi',  wCHi);
+  set('wk-inv-lo',  wILo);  set('wk-inv-mean', wIMean); set('wk-inv-hi',  wIHi);
+
+  // Same-week creation totals
+  const swCgTot  = Object.values(window._dailyContracted).reduce((a,d)=>a+(d.sw_cg||0),0);
+  const swExtTot = Object.values(window._dailyContracted).reduce((a,d)=>a+(d.sw_ext||0),0);
+  const swCgEl  = document.getElementById('wk-sw-cg');
+  const swExtEl = document.getElementById('wk-sw-ext');
+  if(swCgEl)  swCgEl.innerHTML  = `${swCgTot.toFixed(1)}<div style="font-size:8px;color:#a78bfa">${f.$(wSwCg)}</div>`;
+  if(swExtEl) swExtEl.innerHTML = `${swExtTot.toFixed(1)}<div style="font-size:8px;color:#a78bfa">${f.$(wSwExt)}</div>`;
+
+  // ── Cancellation / return adjustments (applied at week level only) ────────────
+  // Pipeline cancels: contracted × (1−avg_SDF) × 93% — non-SDF orders that won't be invoiced
+  // Use revenue-weighted avg SDF across all days
+  const totalContracted = wCMean;
+  const avgSdf = totalContracted > 0
+    ? WEEK_DAYS.reduce((a,d)=>a + (window._dailyContracted[d]?.contracted.mean||0)*(window._dailyContracted[d]?.sdf||0), 0) / totalContracted
+    : (D.revenue_timing?.sdf_pct ?? 0.49);
+
+  // Pipeline not-invoiced: contracted × (1 − historical invoice_ratio)
+  // Represents contracted that historically doesn't convert to invoiced this period.
+  const pipelineCancelRev = Math.round(totalContracted * PIPELINE_NONINVOICE_RATE);
+
+  // Post-delivery returns: 6% of invoiced (Most Likely)
+  const invoicedReturns = Math.round(wIMean * INVOICED_RETURN_RATE);
+
+  // Net invoiced (Most Likely, adjusted) = invoiced − post-delivery returns − pipeline non-invoiced
+  const netInvoiced = Math.max(0, wIMean - invoicedReturns - pipelineCancelRev);
+
+  // These cells need raw text, not a second pass through f.$ — use textContent directly
+  const rawSet = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  rawSet('wk-adj-cancel',  pipelineCancelRev > 0 ? '-'+f.$(pipelineCancelRev) : f.$(0));
+  rawSet('wk-adj-returns', invoicedReturns    > 0 ? '-'+f.$(invoicedReturns)   : f.$(0));
+  rawSet('wk-inv-net', f.$(netInvoiced));
+}
+
+// ── Forecast History (localStorage) ──────────────────────────────────────────
+const HIST_KEY = 'kpi_fc_history_v1';
+function getHistory(){
+  try { return JSON.parse(localStorage.getItem(HIST_KEY)||'[]'); } catch(e){ return []; }
+}
+function setHistory(h){ localStorage.setItem(HIST_KEY, JSON.stringify(h)); }
+
+function saveToHistory(preds, filename){
+  const n_cancelled = preds.filter(p=>p.is_cancelled).length;
+  const n_active    = preds.length - n_cancelled;
+  const testsByDay={}, activeByDay={}, evByDay={}, fByDay={};
+  for(const day of WEEK_DAYS){
+    const dp = preds.filter(p=>p.dow===day);
+    testsByDay[day]  = dp.length;
+    activeByDay[day] = dp.filter(p=>!p.is_cancelled).length;
+    evByDay[day]     = Math.round(dp.reduce((a,p)=>a+p.ev_test,0));
+    const fM = Math.round(dp.reduce((a,p)=>a+p.p_show*p.rev_per_show,0));
+    const fS = Math.sqrt(dp.reduce((a,p)=>a+p.p_show*(1-p.p_show)*p.rev_per_show**2,0));
+    fByDay[day] = {lo:Math.max(0,Math.round(fM-1.96*fS)), mean:fM, hi:Math.round(fM+1.96*fS)};
+  }
+  const fM = Math.round(preds.reduce((a,p)=>a+p.p_show*p.rev_per_show,0));
+  const fS = Math.sqrt(preds.reduce((a,p)=>a+p.p_show*(1-p.p_show)*p.rev_per_show**2,0));
+  const evT = Math.round(preds.reduce((a,p)=>a+p.ev_test,0));
+  const cats={};
+  for(const p of preds){
+    if(!cats[p.cat]) cats[p.cat]={n:0,cancelled:0,ev:0,group:p.group};
+    cats[p.cat].n++;
+    if(p.is_cancelled) cats[p.cat].cancelled++;
+    cats[p.cat].ev = Math.round((cats[p.cat].ev||0)+p.ev_test);
+  }
+  const clin={};
+  for(const p of preds){
+    if(!clin[p.clinic]) clin[p.clinic]={n:0,cancelled:0,ev:0,fMean:0};
+    clin[p.clinic].n++;
+    if(p.is_cancelled) clin[p.clinic].cancelled++;
+    clin[p.clinic].ev    = Math.round((clin[p.clinic].ev||0)+p.ev_test);
+    clin[p.clinic].fMean = Math.round((clin[p.clinic].fMean||0)+p.p_show*p.rev_per_show);
+  }
+  const record = {
+    id: Date.now(),
+    saved_at: new Date().toISOString(),
+    filename,
+    label: '',
+    n_total: preds.length,
+    n_active, n_cancelled,
+    tests_by_day: testsByDay,
+    active_by_day: activeByDay,
+    forecast: {
+      funnel: {lo:Math.max(0,Math.round(fM-1.96*fS)), mean:fM, hi:Math.round(fM+1.96*fS)},
+      ev_test: evT,
+      daily_ev: evByDay,
+      daily_funnel: fByDay,
+    },
+    categories: cats,
+    by_clinic: clin,
+    actual: null,
+  };
+  const h = getHistory();
+  const idx = h.findIndex(r=>r.filename===filename);
+  if(idx>=0){
+    record.label  = h[idx].label  || '';
+    record.actual = h[idx].actual || null;
+    h[idx] = record;
+  } else {
+    h.unshift(record);
+  }
+  if(h.length>52) h.length=52;
+  setHistory(h);
+  renderForecastHistory();
+}
+
+function saveForecastToHistory(){
+  if(!window._fc_preds) return;
+  saveToHistory(window._fc_preds, window._fc_filename);
+  const btn = event.currentTarget;
+  const orig = btn.innerHTML;
+  btn.innerHTML = '&#x2713; Saved';
+  btn.style.cssText += ';background:#f0fdf4;border-color:#16a34a;color:#16a34a';
+  setTimeout(()=>{ btn.innerHTML=orig; btn.style.background=''; btn.style.borderColor=''; btn.style.color=''; },2000);
+}
+
+function deleteHistoryRecord(id){
+  setHistory(getHistory().filter(r=>r.id!==id));
+  renderForecastHistory();
+}
+
+function updateHistoryLabel(id){
+  const h = getHistory();
+  const rec = h.find(r=>r.id===id);
+  if(!rec) return;
+  const el = document.getElementById('hl-'+id);
+  if(el) rec.label = el.value.trim();
+  setHistory(h);
+}
+
+function updateHistoryActual(id){
+  const h = getHistory();
+  const rec = h.find(r=>r.id===id);
+  if(!rec) return;
+  const conEl = document.getElementById('ha-con-'+id);
+  const contracted = parseFloat(conEl?.value)||null;
+  rec.actual = contracted ? {contracted} : null;
+  setHistory(h);
+  renderForecastHistory();
+}
+
+function exportHistoryCSV(){
+  const h = getHistory();
+  if(!h.length){ alert('No history to export.'); return; }
+  const cols = ['label','saved_at','filename','n_active','n_cancelled',
+                'ev_test','funnel_lo','funnel_mean','funnel_hi',
+                'actual_contracted','err_ev_pct','err_funnel_pct'];
+  const rows = [cols.join(',')];
+  for(const r of h){
+    const ac  = r.actual?.contracted ?? '';
+    const ee  = ac!=='' ? (((ac-r.forecast.ev_test)/ac)*100).toFixed(1) : '';
+    const ef  = ac!=='' ? (((ac-r.forecast.funnel.mean)/ac)*100).toFixed(1) : '';
+    rows.push(['"'+(r.label||'')+'"', r.saved_at, '"'+r.filename+'"',
+               r.n_active, r.n_cancelled,
+               r.forecast.ev_test, r.forecast.funnel.lo,
+               r.forecast.funnel.mean, r.forecast.funnel.hi,
+               ac, ee, ef].join(','));
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([rows.join('\n')],{type:'text/csv'}));
+  a.download = 'kpi_forecast_history.csv';
+  a.click();
+}
+
+function renderForecastHistory(){
+  const el = document.getElementById('fc-history');
+  if(!el) return;
+  const h = getHistory();
+  if(!h.length){
+    el.innerHTML = `<div class="fc-method" style="margin-top:18px">
+      <strong>Forecast History</strong><br>
+      No saved forecasts yet. Load a forecast CSV and click
+      <em>&#x1F4BE; Save Forecast</em> to begin tracking accuracy week over week.
+    </div>`;
+    return;
+  }
+
+  // ── MAE summary (weeks with actuals entered) ────────────────────────────────
+  const withAct = h.filter(r=>r.actual?.contracted!=null);
+  let maeBadge = '';
+  if(withAct.length>=1){
+    const mae_ev  = withAct.reduce((a,r)=>a+Math.abs(r.actual.contracted-r.forecast.ev_test),0)/withAct.length;
+    const mae_fun = withAct.reduce((a,r)=>a+Math.abs(r.actual.contracted-r.forecast.funnel.mean),0)/withAct.length;
+    const bias_ev = withAct.reduce((a,r)=>a+(r.actual.contracted-r.forecast.ev_test),0)/withAct.length;
+    maeBadge = `<span style="font-size:10px;color:#64748b;margin-left:10px;font-weight:400">
+      MAE — EV/test: ${f.$(Math.round(mae_ev))} &nbsp;|&nbsp; Funnel: ${f.$(Math.round(mae_fun))}
+      &nbsp;|&nbsp; EV bias: ${bias_ev>=0?'+':''}${f.$(Math.round(bias_ev))}
+      &nbsp;(${withAct.length} wk${withAct.length>1?'s':''} with actuals)
+    </span>`;
+  }
+
+  // ── History rows ────────────────────────────────────────────────────────────
+  const errFmt = (pct) => {
+    if(pct==null) return '<span style="color:#94a3b8">\u2014</span>';
+    const col = pct>=0 ? '#15803d' : '#dc2626';
+    return `<span style="color:${col};font-weight:600">${pct>=0?'+':''}${(pct*100).toFixed(1)}%</span>`;
+  };
+  const tableRows = h.map(rec=>{
+    const ac    = rec.actual?.contracted ?? null;
+    const ee    = ac!=null ? (ac-rec.forecast.ev_test)/ac   : null;
+    const ef    = ac!=null ? (ac-rec.forecast.funnel.mean)/ac : null;
+    const saved = new Date(rec.saved_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'});
+    return `<tr>
+      <td><input id="hl-${rec.id}" type="text" value="${rec.label||''}" placeholder="Week of…"
+            style="width:110px;border:1px solid #d1d5db;border-radius:4px;padding:3px 6px;font-size:11px"
+            onblur="updateHistoryLabel(${rec.id})"></td>
+      <td style="font-size:10px;color:#64748b;white-space:nowrap">${saved}</td>
+      <td style="font-size:10px;color:#94a3b8;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+          title="${rec.filename}">${rec.filename.replace(/\.csv$/i,'')}</td>
+      <td style="text-align:right">${rec.n_active}<span style="color:#dc2626;font-size:9px"> +${rec.n_cancelled}✗</span></td>
+      <td style="text-align:right;font-weight:600">${f.$(rec.forecast.ev_test)}</td>
+      <td style="text-align:right;font-size:10px;color:#64748b">${f.$(rec.forecast.funnel.lo)}&ndash;${f.$(rec.forecast.funnel.hi)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:3px">
+          <span style="font-size:11px;color:#64748b">$</span>
+          <input id="ha-con-${rec.id}" type="number" min="0" step="1000"
+            value="${rec.actual?.contracted||''}" placeholder="Contracted"
+            style="width:88px;border:1px solid #d1d5db;border-radius:4px;padding:3px 5px;font-size:11px;text-align:right"
+            onblur="updateHistoryActual(${rec.id})">
+        </div>
+      </td>
+      <td style="text-align:right">${errFmt(ee)}</td>
+      <td style="text-align:right">${errFmt(ef)}</td>
+      <td><button onclick="deleteHistoryRecord(${rec.id})"
+            style="border:none;background:none;color:#94a3b8;cursor:pointer;font-size:15px;padding:2px 4px"
+            title="Delete">&#x2715;</button></td>
+    </tr>`;
+  }).join('');
+
+  // ── Category trend table (last 4 saved, if enough data) ────────────────────
+  const recent4 = h.filter(r=>r.categories&&Object.keys(r.categories).length>0).slice(0,4);
+  let trendHtml = '';
+  if(recent4.length>=2){
+    const allCats = [...new Set(recent4.flatMap(r=>Object.keys(r.categories)))].sort();
+    const hdrCells = recent4.map(r=>`<th style="font-size:9px;text-align:right;white-space:nowrap">
+      ${r.label||new Date(r.saved_at).toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+    </th>`).join('');
+    const tRows = allCats.map(cat=>{
+      const vals = recent4.map(r=>r.categories[cat]?.n||0);
+      const delta = vals[0]-vals[1];
+      const arrow = delta>2?'<span style="color:#15803d">\u25b2</span>':delta<-2?'<span style="color:#dc2626">\u25bc</span>':'<span style="color:#94a3b8">\u2014</span>';
+      const grp   = recent4[0].categories[cat]?.group||'';
+      return `<tr>
+        <td style="font-size:10px">${cat}</td>
+        <td style="font-size:9px;color:#94a3b8">${grp}</td>
+        ${vals.map(v=>`<td style="text-align:right;font-size:10px">${v}</td>`).join('')}
+        <td style="text-align:center;width:24px">${arrow}</td>
+      </tr>`;
+    }).join('');
+    trendHtml = `
+      <div class="section-title" style="font-size:12px;font-weight:600;margin:16px 0 6px">
+        Test Creation Trends &mdash; by category (last ${recent4.length} saved forecasts)
+      </div>
+      <div class="twrap" style="overflow-x:auto">
+        <table><thead><tr>
+          <th data-num="false">Category</th>
+          <th data-num="false" style="font-size:9px;color:#94a3b8">Group</th>
+          ${hdrCells}
+          <th>Trend</th>
+        </tr></thead><tbody>${tRows}</tbody></table>
+      </div>`;
+  }
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin:24px 0 8px;flex-wrap:wrap">
+      <div class="section-title" style="font-size:13px;font-weight:600;margin:0">
+        Forecast History ${maeBadge}
+      </div>
+      <button onclick="exportHistoryCSV()"
+        style="margin-left:auto;font-size:10px;padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;background:#f8fafc;cursor:pointer">
+        &#x2B07; Export CSV
+      </button>
+    </div>
+    <p class="sec-note" style="margin-bottom:8px">
+      Enter a week label and actual contracted revenue to track accuracy.
+      Positive error = actual exceeded forecast; negative = forecast overshot actual.
+    </p>
+    <div class="twrap" style="overflow-x:auto;margin-bottom:4px">
+      <table><thead><tr>
+        <th data-num="false" style="min-width:120px">Week Label</th>
+        <th data-num="false">Saved</th>
+        <th data-num="false">File</th>
+        <th>Active/Cancel</th>
+        <th>EV/Test Forecast</th>
+        <th data-num="false">Funnel 95% CI</th>
+        <th data-num="false">Actual Contracted ($)</th>
+        <th>EV Error</th>
+        <th>Funnel Error</th>
+        <th></th>
+      </tr></thead><tbody>${tableRows}</tbody></table>
+    </div>
+    ${trendHtml}`;
+}
+
+// ── Render forecast results ───────────────────────────────────────────────────
+function showForecastResults(preds, filename){
+  if(!preds.length){
+    document.getElementById('fc-results').innerHTML =
+      '<div class="fc-warn">No active/scheduled appointments found. Check that appointment status column is present and not all rows are Completed/Cancelled.</div>';
+    return;
+  }
+
+  const n          = preds.length;
+  const n_cancelled = preds.filter(p=>p.is_cancelled).length;
+  const n_active   = n - n_cancelled;
+  const n_conf     = preds.filter(p=>p.confirmed).length;
+  // Cancelled have p_show=0, so they contribute 0 to mean and variance — CI is unchanged by inclusion
+  const showCI     = pbCI(preds.map(p=>p.p_show));
+  const saleCI     = pbCI(preds.map(p=>p.p_sale));
+
+  // ── Revenue CI — Funnel method ─────────────────────────────────────────────
+  // Each appointment is a Bernoulli trial (shows / doesn't show).
+  // If shows: revenue = test_rate × p_close × ha_per_sale × ASP (= rev_per_show).
+  // E[revenue_i] = p_show_i × rev_per_show_i
+  // Var[revenue_i] = p_show_i × (1 − p_show_i) × rev_per_show_i²
+  // Aggregate via CLT: mean ± 1.96 × √(Σ Var_i)
+  const fRevMean = Math.round(preds.reduce((a,p)=>a + p.p_show * p.rev_per_show, 0));
+  const fRevStd  = Math.sqrt(preds.reduce((a,p)=>a + p.p_show*(1-p.p_show)*p.rev_per_show*p.rev_per_show, 0));
+  const fRevLo   = Math.max(0, Math.round(fRevMean - 1.96*fRevStd));
+  const fRevHi   = Math.round(fRevMean + 1.96*fRevStd);
+
+  // ── Revenue — EV/test method ───────────────────────────────────────────────
+  // Sum of historically-observed contracted_revenue ÷ tests_scheduled per category.
+  // Deterministic point estimate (no further distributional uncertainty modelled).
+  const evTotal = Math.round(preds.reduce((a,p)=>a + p.ev_test, 0));
+
+  // Group by clinic
+  const byClinic = {};
+  for(const p of preds){
+    if(!byClinic[p.clinic]) byClinic[p.clinic]={n:0,conf:0,ps:[],psa:[],frevItems:[],evSum:0};
+    byClinic[p.clinic].n++;
+    if(p.confirmed) byClinic[p.clinic].conf++;
+    byClinic[p.clinic].ps.push(p.p_show);
+    byClinic[p.clinic].psa.push(p.p_sale);
+    byClinic[p.clinic].frevItems.push({ps:p.p_show, rpx:p.rev_per_show});
+    byClinic[p.clinic].evSum += p.ev_test;
+  }
+  const clinicRows = Object.entries(byClinic)
+    .map(([name,d])=>{
+      const sc  = pbCI(d.ps), sa = pbCI(d.psa);
+      const frm = Math.round(d.frevItems.reduce((a,x)=>a+x.ps*x.rpx, 0));
+      const frs = Math.sqrt(d.frevItems.reduce((a,x)=>a+x.ps*(1-x.ps)*x.rpx*x.rpx, 0));
+      const frl = Math.max(0, Math.round(frm - 1.96*frs));
+      const frh = Math.round(frm + 1.96*frs);
+      const ev  = Math.round(d.evSum);
+      return {name, n:d.n, conf:d.conf, sc, sa, frm, frl, frh, ev};
+    })
+    .sort((a,b)=>b.sc.mean-a.sc.mean);
+
+  // Group by lead source group
+  const byGroup = {clinic:{n:0,ps:[],psa:[],frevItems:[],evSum:0},
+                   external:{n:0,ps:[],psa:[],frevItems:[],evSum:0},
+                   unknown:{n:0,ps:[],psa:[],frevItems:[],evSum:0}};
+  for(const p of preds){
+    const g=byGroup[p.group]||byGroup.unknown;
+    g.n++; g.ps.push(p.p_show); g.psa.push(p.p_sale);
+    g.frevItems.push({ps:p.p_show,rpx:p.rev_per_show}); g.evSum+=p.ev_test;
+  }
+
+  // Avg show rates for methodology note
+  const avg_show_conf    = preds.filter(p=>p.confirmed).reduce((a,p)=>a+p.p_show,0)/(n_conf||1);
+  // Exclude cancelled from non-confirmed avg (their p_show=0 would distort the average)
+  const avg_show_noconf  = preds.filter(p=>!p.confirmed&&!p.is_cancelled).reduce((a,p)=>a+p.p_show,0)/((n_active-n_conf)||1);
+
+  // Store for Save Forecast button access
+  window._fc_preds    = preds;
+  window._fc_filename = filename;
+
+  document.getElementById('fc-results').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:12px;color:#64748b">
+        <strong style="color:#1a1a2e">${filename}</strong>
+        &nbsp;&middot;&nbsp;${f.n(n_active)} active · <span style="color:#dc2626">${f.n(n_cancelled)} cancelled</span>
+        &nbsp;&middot;&nbsp;${f.n(n_conf)} confirmed (${f.pct(n_conf/(n_active||1))})
+        <button class="btn-reset" onclick="resetForecast()">&#x2715; Clear</button>
+        <button onclick="saveForecastToHistory()"
+          style="margin-left:6px;font-size:11px;padding:3px 10px;border:1px solid #0ea5e9;border-radius:6px;background:#eff6ff;color:#0284c7;cursor:pointer">
+          &#x1F4BE; Save Forecast
+        </button>
+      </div>
+    </div>
+
+    <div class="cards" style="padding:0;margin-bottom:18px">
+      <div class="card"><div class="lbl">Scheduled</div><div class="val">${f.n(n)}</div>
+        <div class="sub">${f.n(n_active)} active · ${f.n(n_cancelled)} cancelled</div></div>
+      <div class="card hi"><div class="lbl">Expected Shows</div>
+        <div class="val">${showCI.mean.toFixed(1)}</div>
+        <div class="sub">${showCI.lo.toFixed(1)}\u2013${showCI.hi.toFixed(1)} &nbsp;95% CI</div></div>
+      <div class="card"><div class="lbl">Expected Sales</div>
+        <div class="val">${saleCI.mean.toFixed(1)}</div>
+        <div class="sub">${saleCI.lo.toFixed(1)}\u2013${saleCI.hi.toFixed(1)} &nbsp;95% CI</div></div>
+      <div class="card hi"><div class="lbl">Rev — Funnel Model</div>
+        <div class="val">${f.$(fRevMean)}</div>
+        <div class="sub">${f.$(fRevLo)}\u2013${f.$(fRevHi)} &nbsp;95% CI</div></div>
+      <div class="card"><div class="lbl">Rev — EV/Test</div>
+        <div class="val">${f.$(evTotal)}</div>
+        <div class="sub">Contracted $/test &times; tests scheduled</div></div>
+    </div>
+
+    <div class="chart-row">
+      <div style="flex:2">
+        <div class="twrap"><table id="fc-clinic-tbl">
+          <thead><tr>
+            <th data-num="false">Clinic</th>
+            <th>Scheduled</th><th>Confirmed</th>
+            <th>Exp Shows</th><th data-num="false">Shows 95% CI</th>
+            <th>Exp Sales</th><th data-num="false">Sales 95% CI</th>
+            <th>Rev (Funnel)</th><th data-num="false">Funnel 95% CI</th>
+            <th>Rev (EV/Test)</th>
+          </tr></thead>
+          <tbody>${clinicRows.map(r=>`<tr>
+            <td>${r.name}</td>
+            <td data-v="${r.n}">${f.n(r.n)}</td>
+            <td data-v="${r.conf}">${f.n(r.conf)} <span style="color:#94a3b8;font-size:10px">(${f.pct(r.conf/r.n)})</span></td>
+            <td data-v="${r.sc.mean}" style="font-weight:600">${r.sc.mean.toFixed(1)}</td>
+            <td style="color:#94a3b8;font-size:10px">${r.sc.lo.toFixed(1)}\u2013${r.sc.hi.toFixed(1)}</td>
+            <td data-v="${r.sa.mean}" style="font-weight:600">${r.sa.mean.toFixed(1)}</td>
+            <td style="color:#94a3b8;font-size:10px">${r.sa.lo.toFixed(1)}\u2013${r.sa.hi.toFixed(1)}</td>
+            <td data-v="${r.frm}" style="font-weight:600">${f.$(r.frm)}</td>
+            <td style="color:#94a3b8;font-size:10px">${f.$(r.frl)}\u2013${f.$(r.frh)}</td>
+            <td data-v="${r.ev}">${f.$(r.ev)}</td>
+          </tr>`).join('')}</tbody>
+        </table></div>
+      </div>
+
+      <div style="flex:1">
+        <div class="twrap"><table>
+          <thead><tr>
+            <th data-num="false">Lead Source Group</th>
+            <th>Scheduled</th><th>Exp Shows</th><th>Exp Sales</th>
+            <th>Rev (Funnel)</th><th>Rev (EV/Test)</th>
+          </tr></thead>
+          <tbody>${Object.entries(byGroup).filter(([,d])=>d.n>0).map(([grp,d])=>{
+            const sc=pbCI(d.ps), sa=pbCI(d.psa);
+            const gfm=Math.round(d.frevItems.reduce((a,x)=>a+x.ps*x.rpx,0));
+            const gfs=Math.sqrt(d.frevItems.reduce((a,x)=>a+x.ps*(1-x.ps)*x.rpx*x.rpx,0));
+            const gfl=Math.max(0,Math.round(gfm-1.96*gfs)), gfh=Math.round(gfm+1.96*gfs);
+            const gev=Math.round(d.evSum);
+            return `<tr>
+              <td><span class="pill ${grp}">${gLbl(grp)}</span></td>
+              <td>${f.n(d.n)}</td>
+              <td>${sc.mean.toFixed(1)} <span style="color:#94a3b8;font-size:10px">[${sc.lo.toFixed(1)}\u2013${sc.hi.toFixed(1)}]</span></td>
+              <td>${sa.mean.toFixed(1)} <span style="color:#94a3b8;font-size:10px">[${sa.lo.toFixed(1)}\u2013${sa.hi.toFixed(1)}]</span></td>
+              <td>${f.$(gfm)} <span style="color:#94a3b8;font-size:10px">[${f.$(gfl)}\u2013${f.$(gfh)}]</span></td>
+              <td>${f.$(gev)}</td>
+            </tr>`;}).join('')}</tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <div class="fc-method">
+      <strong>Prediction methodology</strong>
+      Show rate: clinic-specific historical rates for confirmed (avg ${f.pct(avg_show_conf)})
+      and unconfirmed (avg ${f.pct(avg_show_noconf)}) appointments, from JAN\u2013MAR 2026 actuals.
+      Close rate: by lead source category where campaign maps to a known category, otherwise by creator role
+      (clinic-gen / external). Aidable loss rate: ${f.pct(D.rates.aidable_rate)} of shows.
+      All show/sale intervals are 95% Poisson-binomial CI (correct for sums of Bernoulli trials with different p\u2019s).
+      <br><br>
+      <strong>Revenue \u2014 Funnel model:</strong>
+      E[revenue\u1d62] = p_show\u1d62 \u00d7 ${f.pct(D.rates.test_rate)} tested \u00d7 ${f.pct(D.rates.aidable_of_tested)} aidable \u00d7 p_close\u1d62 \u00d7 ${D.rates.ha_per_sale.toFixed(3)} HA/sale \u00d7 ASP (${f.$(D.rates.asp)}/HA).
+      Effective aidable rate = ${f.pct(D.rates.aidable_rate)}. ha/sale calibrated to full-period contracted revenue.
+      Revenue CI propagates show-rate uncertainty: Var[revenue\u1d62] = p_show\u1d62(1\u2212p_show\u1d62) \u00d7 rev_if_shows\u1d62\u00b2,
+      aggregated via CLT. Close-rate variability is not separately modelled in the CI \u2014
+      the true interval is somewhat wider for weeks with unusual category mix.
+      Caution: this model overpredicted JAN\u2013MAR actuals by ~19% vs contracted revenue
+      (\$${f.$(Math.round(fRevMean))} forecast vs actual \u2014 validate against EV/test).
+      <br><br>
+      <strong>Revenue \u2014 EV/test model:</strong>
+      Contracted revenue \u00f7 tests scheduled from JAN\u2013MAR Reporting Dimension, by category.
+      Falls back to group average (clinic-gen ${f.$(D.rates.ev_per_group.clinic)}/test,
+      external ${f.$(D.rates.ev_per_group.external)}/test,
+      overall ${f.$(D.rates.ev_per_group.overall)}/test) when category is unmapped.
+      Single point estimate \u2014 no CI modelled (the uncertainty is in the realized show and close rates,
+      already captured in the funnel model). Historically more accurate than funnel model.
+      <br><br>
+      <strong>CI reliability note:</strong>
+      Poisson-binomial normal approximation is well-justified for n \u2265 100 (skewness \u2248 0).
+      For individual clinics with fewer than ~50 scheduled appointments, treat the CI as
+      approximate \u2014 the true interval is slightly wider.
+      All CIs assume appointment independence; intra-clinic correlation (shared provider effects)
+      would widen intervals further if accounted for.
+      <br><br>
+      <strong>Note: this predicts outcomes for currently-scheduled appointments only.</strong>
+      It does not yet account for appointments that will be booked during the week
+      (walk-ins, same-day referrals, short lead-time external). That layer is coming next.
+    </div>
+    <div id="fc-daily"></div>`;
+
+  makeSortable('fc-clinic-tbl');
+  renderDailyRevSection(preds);
+}
+
+function resetForecast(){
+  document.getElementById('fc-file-info').textContent='';
+  document.getElementById('fc-results').innerHTML='';
+  document.getElementById('fc-input').value='';
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderLead();
+renderClinics();
+renderPatients();
+renderOrigin();
+renderForecast();
+renderForecastHistory();
+renderAnalysis();
+drawAll('lead');
+window.addEventListener('resize', ()=>drawAll(
+  document.querySelector('.tab.active')?.dataset?.tab||'lead'
+));
+</script>
+</body>
+</html>
