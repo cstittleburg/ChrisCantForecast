@@ -1008,9 +1008,12 @@ function predictAppointments(rows){
     // then region fallback.
     // Cancelled: p_show = 0. EV/test still applies — rate calibrated on all scheduled tests.
     const is_clinic_gen = ['Dispenser','Clinic Assistant'].includes(created_by);
+    // Blank created_by = online booking (System Dm-Crm) or unknown → treat as external
+    const is_external_role = !created_by || created_by.trim()==='' ||
+                             ['Telemarketer','Head Office'].includes(created_by);
     const cat = D.rates.campaign_map[campaign] || campaignToCategory(campaign);
     const catData = cat ? D.rates.categories[cat] : null;
-    const group = catData ? catData.group : (is_clinic_gen ? 'clinic' : (created_by ? 'external' : 'unknown'));
+    const group = catData ? catData.group : (is_clinic_gen ? 'clinic' : 'external');
 
     let p_show;
     if(is_cancelled){
