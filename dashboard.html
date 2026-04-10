@@ -817,8 +817,11 @@ function drawCorrCharts(){
 
 function renderForecast(){
   document.getElementById('p-forecast').innerHTML = `
-    <p class="sec-note">Upload next week's scheduled appointments (CSV, same Looker export format as Sales Funnel).
-    Predictions use JAN\u2013MAR historical show & close rates by lead source and confirmation status.</p>
+    <p class="sec-note">Upload next week's scheduled appointments using the <strong>Sales Funnel (Focused)</strong>
+    Looker export — the same format as the historical SF file, with one row per appointment and columns including
+    <em>Created-by logged role</em>, <em>Campaign Activity</em>, and <em>Confirmation Date</em>.
+    <strong>Do not upload the Reporting Dimension export</strong> (that file has one row per clinic and no appointment-level detail).
+    Predictions use JAN\u2013MAR historical show &amp; close rates by lead source, confirmation status, and creator role.</p>
     <div class="drop-zone" id="drop-zone"
          ondragover="event.preventDefault();this.classList.add('over')"
          ondragleave="this.classList.remove('over')"
@@ -852,11 +855,33 @@ function handleFile(file){
   reader.onload = e => {
     try {
       const rows = parseCSV(e.target.result);
+      // Validate that this is an appointment-level SF export, not a Reporting Dimension file
+      const warnings = [];
+      if(rows.length === 0){
+        throw new Error('No appointment rows found. Check that this is the Sales Funnel (Focused) export, not the Reporting Dimension.');
+      }
+      const hasCreatedBy = rows.some(r => r.created_by && r.created_by.trim() !== '');
+      const hasCampaign  = rows.some(r => r.campaign  && r.campaign.trim()  !== '');
+      const hasClinic    = rows.some(r => r.clinic     && r.clinic.trim()    !== '');
+      if(!hasCreatedBy){
+        warnings.push('⚠️ <strong>Created-by logged role column not found or blank</strong> — all appointments will be treated as external. Make sure you\'re uploading the Sales Funnel (Focused) export, not the Reporting Dimension.');
+      }
+      if(!hasCampaign){
+        warnings.push('⚠️ Campaign Activity column not found — close rates and EV/test will fall back to group averages.');
+      }
+      if(!hasClinic){
+        throw new Error('Clinic name column not found. This does not appear to be a Sales Funnel export.');
+      }
+      // Show warnings but still proceed
+      const warnEl = document.getElementById('fc-results');
+      if(warnings.length){
+        warnEl.innerHTML = warnings.map(w=>`<div class="fc-warn" style="margin-bottom:6px">${w}</div>`).join('');
+      }
       const preds = predictAppointments(rows);
       showForecastResults(preds, file.name);
     } catch(err) {
       document.getElementById('fc-results').innerHTML =
-        `<div class="fc-warn">Error parsing file: ${err.message}. Check that the file is a CSV with the Sales Funnel column headers.</div>`;
+        `<div class="fc-warn">Error parsing file: ${err.message}. Check that the file is a Sales Funnel (Focused) CSV export.</div>`;
     }
   };
   reader.readAsText(file);
