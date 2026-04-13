@@ -2115,15 +2115,21 @@ function showForecastResults(preds, filename){
         <div class="val">${f.$(fRevMean)}</div>
         <div class="sub">${f.$(fRevLo)}\u2013${f.$(fRevHi)} &nbsp;95% CI</div>
       </div>
-      <div class="card" style="border-left:3px solid #0ea5e9">
-        <div class="lbl" style="color:#0369a1">Invoiced \u2014 Funnel Model</div>
-        <div class="val" style="color:#0369a1" id="sum-inv-funnel">${f.$(fInv)}</div>
-        <div class="sub" id="sum-inv-funnel-sub">contracted \u00d7 SDF ${f.pct(_sdf)}</div>
-      </div>
       <div class="card">
         <div class="lbl">Contracted \u2014 EV/Test</div>
         <div class="val">${f.$(evTotal)}</div>
         <div class="sub">hist. $/test \u00d7 tests scheduled</div>
+      </div>
+      ${wsRegion?.forecasted_contracting ? `
+      <div class="card" style="border-left:3px solid #15803d">
+        <div class="lbl" style="color:#15803d">Contracted \u2014 Weekly Setup</div>
+        <div class="val" style="color:#15803d">${f.$(Math.round(wsRegion.forecasted_contracting))}</div>
+        <div class="sub" style="color:#64748b">full sales value (your file)</div>
+      </div>` : ''}
+      <div class="card" style="border-left:3px solid #0ea5e9">
+        <div class="lbl" style="color:#0369a1">Invoiced \u2014 Funnel Model</div>
+        <div class="val" style="color:#0369a1" id="sum-inv-funnel">${f.$(fInv)}</div>
+        <div class="sub" id="sum-inv-funnel-sub">contracted \u00d7 SDF ${f.pct(_sdf)}</div>
       </div>
       <div class="card" style="border-left:3px solid #64748b">
         <div class="lbl" style="color:#475569">Invoiced \u2014 EV/Test</div>
@@ -2132,11 +2138,6 @@ function showForecastResults(preds, filename){
       </div>`;
       })()}
       ${wsRegion?.forecasted_contracting ? `
-      <div class="card" style="border-left:3px solid #15803d">
-        <div class="lbl" style="color:#15803d">Contracted \u2014 Weekly Setup</div>
-        <div class="val" style="color:#15803d">${f.$(Math.round(wsRegion.forecasted_contracting))}</div>
-        <div class="sub" style="color:#64748b">full sales value (your file)</div>
-      </div>
       <div class="card" style="border-left:3px solid #1d4ed8">
         <div class="lbl" style="color:#1d4ed8">Invoiced \u2014 Weekly Setup</div>
         <div class="val" style="color:#1d4ed8">${f.$(Math.round(wsRegion.forecasted_invoiced ?? 0))}</div>
