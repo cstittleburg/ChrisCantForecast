@@ -1403,13 +1403,21 @@ function renderDailyRevSection(preds){
 
           <!-- Same-week adds -->
           <tr style="background:#faf5ff;border-top:2px solid #ddd6fe">
-            <td colspan="1" style="font-size:9px;font-weight:700;color:#7c3aed;padding:4px 8px;text-transform:uppercase;letter-spacing:.4px">
+            <td rowspan="2" style="font-size:9px;font-weight:700;color:#7c3aed;padding:4px 8px;text-transform:uppercase;letter-spacing:.4px;vertical-align:middle">
               SW Adds</td>
-            <td colspan="4" style="font-size:10px;color:#7c3aed;padding:4px 8px">
+            <td colspan="4" style="font-size:10px;color:#7c3aed;padding:4px 6px 2px">
               CG: <span id="wk-sw-cg" style="font-weight:600"></span>
               &nbsp;&middot;&nbsp; Non-clinic: <span id="wk-sw-ext" style="font-weight:600"></span>
-              &nbsp;&middot;&nbsp; Revenue: <span id="wk-sw-rev-total" style="font-weight:700"></span>
+              &nbsp;&middot;&nbsp;
+              <strong>Contracted:</strong> <span id="wk-sw-rev-total" style="font-weight:700"></span>
               <span style="color:#a78bfa;font-size:9px"> (CG: <span id="wk-sw-rev-cg"></span> &middot; Ext: <span id="wk-sw-rev-ext"></span>)</span>
+            </td>
+          </tr>
+          <tr style="background:#faf5ff">
+            <td colspan="4" style="font-size:10px;color:#7c3aed;padding:2px 6px 4px">
+              <strong>Invoiced:</strong> <span id="wk-sw-inv-total" style="font-weight:700"></span>
+              <span style="color:#a78bfa;font-size:9px"> (CG: <span id="wk-sw-inv-cg"></span> &middot; Ext: <span id="wk-sw-inv-ext"></span>)
+              &nbsp;&middot;&nbsp; contracted &times; SDF%</span>
             </td>
           </tr>
         </tbody>
@@ -1581,11 +1589,17 @@ function updateDailyInvoiced(){
   // Same-week creation totals
   const swCgTot  = Object.values(window._dailyContracted).reduce((a,d)=>a+(d.sw_cg||0),0);
   const swExtTot = Object.values(window._dailyContracted).reduce((a,d)=>a+(d.sw_ext||0),0);
-  setText('wk-sw-cg',       swCgTot.toFixed(1));
-  setText('wk-sw-ext',      swExtTot.toFixed(1));
-  setText('wk-sw-rev-cg',   f.$(wSwCg));
-  setText('wk-sw-rev-ext',  f.$(wSwExt));
-  setText('wk-sw-rev-total',f.$(wSwCg + wSwExt));
+  const _swSdf   = D.revenue_timing?.sdf_pct ?? 0.49;
+  const swInvCg  = Math.round(wSwCg  * _swSdf);
+  const swInvExt = Math.round(wSwExt * _swSdf);
+  setText('wk-sw-cg',        swCgTot.toFixed(1));
+  setText('wk-sw-ext',       swExtTot.toFixed(1));
+  setText('wk-sw-rev-cg',    f.$(wSwCg));
+  setText('wk-sw-rev-ext',   f.$(wSwExt));
+  setText('wk-sw-rev-total', f.$(wSwCg + wSwExt));
+  setText('wk-sw-inv-cg',    f.$(swInvCg));
+  setText('wk-sw-inv-ext',   f.$(swInvExt));
+  setText('wk-sw-inv-total', f.$(swInvCg + swInvExt));
 
   // ── Adjustments (week ML only) ────────────────────────────────────────────
   const pipelineCancelRev = Math.round(wCMean * PIPELINE_NONINVOICE_RATE);
