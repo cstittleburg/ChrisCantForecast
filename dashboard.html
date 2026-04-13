@@ -2208,7 +2208,7 @@ function showForecastResults(preds, filename){
     </div>
     ${Object.keys(wsClinics).length > 0 ? `
     <div style="margin-top:18px">
-      <div class="section-title" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'':'none'"
+      <div class="section-title" onclick="(function(h){const b=h.nextElementSibling,a=h.querySelector('span');b.style.display=b.style.display==='none'?'':'none';a.innerHTML=b.style.display===''?'&#9660;':'&#9654;'})(this)"
         style="font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:4px;user-select:none">
         <span id="ws-arrow" style="color:#7c3aed;font-size:10px">&#9654;</span>
         Weekly Setup Model Comparison
@@ -2265,12 +2265,7 @@ function showForecastResults(preds, filename){
         </p>
       </div>
     </div>
-    <script>
-    document.getElementById('ws-arrow').closest('.section-title').addEventListener('click',function(){
-      const b=document.getElementById('ws-body'), a=document.getElementById('ws-arrow');
-      const o=b.style.display!=='none'; b.style.display=o?'none':''; a.innerHTML=o?'&#9654;':'&#9660;';
-    });
-    </script>` : ''}
+` : ''}
     <div id="fc-daily"></div>`;
 
   makeSortable('fc-clinic-tbl');
