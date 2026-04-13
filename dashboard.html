@@ -1297,176 +1297,137 @@ function renderDailyRevSection(preds){
     </div>
 
     <div class="twrap" style="overflow-x:auto;margin-bottom:6px">
-      <table style="min-width:560px">
+      <table style="min-width:420px">
         <thead>
-          <tr style="background:#f8fafc">
-            <th data-num="false" style="min-width:90px">Day</th>
-            <th data-num="false" style="min-width:60px">Scenario</th>
-            <th colspan="3" style="background:#f0fdf4;color:#15803d;text-align:center">
-              Contracted &nbsp;<span style="font-size:9px;font-weight:400">(sales committed)</span></th>
-            <th colspan="3" style="background:#eff6ff;color:#1d4ed8;text-align:center">
-              SDF Revenue &nbsp;<span style="font-size:9px;font-weight:400">(contracted &times; SDF%)</span></th>
-            <th colspan="3" style="background:#f0f9ff;color:#0369a1;text-align:center">
-              + Fittings &nbsp;<span style="font-size:9px;font-weight:400">(SDF rev + delivery inputs)</span></th>
-          </tr>
-          <tr style="background:#f8fafc;font-size:10px">
-            <th></th><th></th>
-            <th style="background:#f0fdf4;color:#15803d">&#9650; High</th>
-            <th style="background:#f0fdf4;font-weight:700">Most Likely</th>
-            <th style="background:#f0fdf4;color:#94a3b8">&#9660; Low</th>
-            <th style="background:#eff6ff;color:#1d4ed8">&#9650; High</th>
-            <th style="background:#eff6ff;font-weight:700">Most Likely</th>
-            <th style="background:#eff6ff;color:#94a3b8">&#9660; Low</th>
-            <th style="background:#f0f9ff;color:#0369a1">&#9650; High</th>
-            <th style="background:#f0f9ff;font-weight:700">Most Likely</th>
-            <th style="background:#f0f9ff;color:#94a3b8">&#9660; Low</th>
+          <tr style="background:#f8fafc;font-size:11px">
+            <th data-num="false" style="min-width:70px">Day</th>
+            <th data-num="false" style="min-width:72px">Scenario</th>
+            <th style="background:#f0fdf4;color:#15803d;min-width:90px">
+              Contracted<br><span style="font-size:9px;font-weight:400">sales committed</span></th>
+            <th style="background:#eff6ff;color:#1d4ed8;min-width:90px">
+              SDF Revenue<br><span style="font-size:9px;font-weight:400">contracted &times; SDF%</span></th>
+            <th style="background:#fefce8;color:#92400e;min-width:90px">
+              Fittings<br><span style="font-size:9px;font-weight:400">prior-period deliveries</span></th>
+            <th style="background:#f0f9ff;color:#0369a1;min-width:90px">
+              SDF + Fittings<br><span style="font-size:9px;font-weight:400">total invoiced est.</span></th>
           </tr>
         </thead>
         <tbody>
           ${WEEK_DAYS.map((d,di)=>{
-            const dc = daily[d];
-            const can = dc.n_cancelled>0 ? ` <span style="color:#dc2626">+${dc.n_cancelled}✗</span>` : '';
+            const dc  = daily[d];
+            const can = dc.n_cancelled>0 ? ` <span style="color:#dc2626">+${dc.n_cancelled}&#x2717;</span>` : '';
             const sw  = dc.sw_cg + dc.sw_ext;
-            const swNote = sw>0 ? ` <span style="color:#7c3aed;font-size:9px">+${sw.toFixed(1)} sw</span>` : '';
-            const bg = di%2===0 ? '#fafafa' : '#fff';
+            const swN = sw>0 ? ` &middot; <span style="color:#7c3aed">+${sw.toFixed(1)} sw</span>` : '';
+            const bg  = di%2===0 ? '#fafafa' : '#fff';
             return `
           <tr style="background:#f1f5f9;border-top:2px solid #e2e8f0">
-            <td colspan="11" style="font-size:11px;font-weight:700;padding:4px 10px;color:#1a1a2e">
+            <td colspan="6" style="font-size:11px;font-weight:700;padding:4px 10px;color:#1a1a2e">
               ${d}
-              <span style="font-weight:400;color:#64748b;font-size:10px"> &middot; ${dc.n} active${can}${swNote} &middot; SDF ${f.pct(dc.sdf)}</span>
+              <span style="font-weight:400;color:#64748b;font-size:10px"> &middot; ${dc.n} active${can}${swN} &middot; SDF ${f.pct(dc.sdf)}</span>
             </td>
           </tr>
           <tr style="background:${bg}">
-            <td rowspan="3" style="font-size:10px;color:#64748b;text-align:center;border-right:1px solid #e2e8f0"></td>
-            <td style="font-size:10px;color:#15803d;padding-left:8px">&#9650; High</td>
+            <td style="font-size:10px;color:#64748b;padding-left:8px">&#9650; High</td>
+            <td style="font-size:10px;padding-left:4px;color:#94a3b8">contracted hi</td>
             <td style="color:#15803d">${f.$(dc.contracted.hi)}</td>
-            <td style="font-weight:600">${f.$(dc.contracted.mean)}</td>
-            <td style="color:#94a3b8">${f.$(dc.contracted.lo)}</td>
-            <td id="sdf-${d}-hi"  style="color:#1d4ed8"></td>
-            <td id="sdf-${d}-mean" style="font-weight:600"></td>
-            <td id="sdf-${d}-lo"  style="color:#94a3b8"></td>
-            <td id="fit-${d}-hi"  style="color:#0369a1"></td>
-            <td id="fit-${d}-mean" style="font-weight:600"></td>
-            <td id="fit-${d}-lo"  style="color:#94a3b8"></td>
+            <td id="sdfr-${d}-hi" style="color:#1d4ed8"></td>
+            <td id="fitv-${d}" rowspan="3" style="color:#92400e;font-weight:600;vertical-align:middle;text-align:center"></td>
+            <td id="tot-${d}-hi" style="color:#0369a1"></td>
           </tr>
           <tr style="background:${bg}">
             <td style="font-size:11px;font-weight:700;padding-left:8px">Most Likely</td>
-            <td style="color:#15803d">${f.$(dc.contracted.hi)}</td>
+            <td style="font-size:10px;padding-left:4px;color:#94a3b8">contracted ml</td>
             <td style="font-weight:700">${f.$(dc.contracted.mean)}</td>
-            <td style="color:#94a3b8">${f.$(dc.contracted.lo)}</td>
-            <td id="sdf-${d}-hi2"  style="color:#1d4ed8"></td>
-            <td id="sdf-${d}-mean2" style="font-weight:700"></td>
-            <td id="sdf-${d}-lo2"  style="color:#94a3b8"></td>
-            <td id="fit-${d}-hi2"  style="color:#0369a1"></td>
-            <td id="fit-${d}-mean2" style="font-weight:700"></td>
-            <td id="fit-${d}-lo2"  style="color:#94a3b8"></td>
+            <td id="sdfr-${d}-mean" style="font-weight:700"></td>
+            <td id="tot-${d}-mean" style="font-weight:700;color:#0369a1"></td>
           </tr>
           <tr style="background:${bg}">
             <td style="font-size:10px;color:#94a3b8;padding-left:8px">&#9660; Low</td>
-            <td style="color:#15803d">${f.$(dc.contracted.hi)}</td>
-            <td style="color:#94a3b8">${f.$(dc.contracted.mean)}</td>
+            <td style="font-size:10px;padding-left:4px;color:#94a3b8">contracted lo</td>
             <td style="color:#94a3b8">${f.$(dc.contracted.lo)}</td>
-            <td id="sdf-${d}-hi3"  style="color:#1d4ed8"></td>
-            <td id="sdf-${d}-mean3" style="color:#94a3b8"></td>
-            <td id="sdf-${d}-lo3"  style="color:#94a3b8"></td>
-            <td id="fit-${d}-hi3"  style="color:#0369a1"></td>
-            <td id="fit-${d}-mean3" style="color:#94a3b8"></td>
-            <td id="fit-${d}-lo3"  style="color:#94a3b8"></td>
+            <td id="sdfr-${d}-lo" style="color:#94a3b8"></td>
+            <td id="tot-${d}-lo" style="color:#94a3b8"></td>
           </tr>`;
           }).join('')}
 
           <!-- Week Total -->
           <tr style="background:#f1f5f9;border-top:3px solid #cbd5e1">
-            <td colspan="11" style="font-size:11px;font-weight:700;padding:4px 10px;color:#1a1a2e">
+            <td colspan="6" style="font-size:11px;font-weight:700;padding:4px 10px;color:#1a1a2e">
               Week Total
               <span style="font-weight:400;color:#64748b;font-size:10px"> &middot; ${WEEK_DAYS.reduce((a,d)=>a+daily[d].n,0)} active</span>
             </td>
           </tr>
-          <tr style="background:#fafafa">
-            <td rowspan="3" style="font-size:10px;color:#64748b;text-align:center;border-right:1px solid #e2e8f0"></td>
+          <tr style="background:#f8fafc">
             <td style="font-size:10px;color:#15803d;padding-left:8px">&#9650; High</td>
+            <td style="font-size:10px;padding-left:4px;color:#94a3b8">contracted hi</td>
             <td id="wk-con-hi"  style="color:#15803d;font-weight:600"></td>
-            <td></td><td></td>
             <td id="wk-sdf-hi"  style="color:#1d4ed8;font-weight:600"></td>
-            <td></td><td></td>
-            <td id="wk-fit-hi"  style="color:#0369a1;font-weight:600"></td>
-            <td></td><td></td>
+            <td id="wk-fit-val" rowspan="3" style="color:#92400e;font-weight:700;vertical-align:middle;text-align:center"></td>
+            <td id="wk-tot-hi"  style="color:#0369a1;font-weight:600"></td>
           </tr>
-          <tr style="background:#fafafa">
+          <tr style="background:#f8fafc">
             <td style="font-size:11px;font-weight:700;padding-left:8px">Most Likely</td>
-            <td></td>
+            <td style="font-size:10px;padding-left:4px;color:#94a3b8">contracted ml</td>
             <td id="wk-con-mean" style="font-weight:700"></td>
-            <td></td>
-            <td></td>
             <td id="wk-sdf-mean" style="font-weight:700"></td>
-            <td></td>
-            <td></td>
-            <td id="wk-fit-mean" style="font-weight:700"></td>
-            <td></td>
+            <td id="wk-tot-mean" style="font-weight:700;color:#0369a1"></td>
           </tr>
-          <tr style="background:#fafafa">
+          <tr style="background:#f8fafc">
             <td style="font-size:10px;color:#94a3b8;padding-left:8px">&#9660; Low</td>
-            <td></td><td></td>
+            <td style="font-size:10px;padding-left:4px;color:#94a3b8">contracted lo</td>
             <td id="wk-con-lo"  style="color:#94a3b8"></td>
-            <td></td><td></td>
             <td id="wk-sdf-lo"  style="color:#94a3b8"></td>
-            <td></td><td></td>
-            <td id="wk-fit-lo"  style="color:#94a3b8"></td>
+            <td id="wk-tot-lo"  style="color:#94a3b8"></td>
           </tr>
 
-          <!-- Week adjustments -->
+          <!-- Adjustments (week ML only) -->
           <tr style="background:#fffbeb;border-top:2px solid #fcd34d">
             <td colspan="2" style="font-size:10px;color:#b45309;padding:4px 8px"
-                title="Contracted \u00d7 (1 \u2212 invoice_ratio) \u2014 ${f.pct(PIPELINE_NONINVOICE_RATE)} YTD">
+                title="Contracted \u00d7 ${f.pct(PIPELINE_NONINVOICE_RATE)} \u2014 historical gap">
               &minus; Non-invoiced contracted (${f.pct(PIPELINE_NONINVOICE_RATE)})
             </td>
-            <td colspan="3" style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
-            <td colspan="3" style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
-            <td id="wk-adj-cancel" colspan="3" style="color:#b45309;font-weight:600"></td>
+            <td style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
+            <td style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
+            <td style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
+            <td id="wk-adj-cancel" style="color:#b45309;font-weight:600"></td>
           </tr>
           <tr style="background:#fffbeb">
-            <td colspan="2" style="font-size:10px;color:#b45309;padding:4px 8px"
-                title="Invoiced \u00d7 6% \u2014 post-delivery returns">
-              &minus; Post-delivery returns (6%)
+            <td colspan="2" style="font-size:10px;color:#b45309;padding:4px 8px">
+              &minus; Post-delivery returns (6% of invoiced)
             </td>
-            <td colspan="3" style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
-            <td colspan="3" style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
-            <td id="wk-adj-returns" colspan="3" style="color:#b45309;font-weight:600"></td>
+            <td style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
+            <td style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
+            <td style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
+            <td id="wk-adj-returns" style="color:#b45309;font-weight:600"></td>
           </tr>
           <tr style="background:#fef3c7;border-top:2px solid #fcd34d">
             <td colspan="2" style="font-weight:700;font-size:12px;padding:5px 8px">Net Invoiced (adj.)</td>
-            <td colspan="3" style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
-            <td colspan="3" style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
-            <td id="wk-inv-net" colspan="3" style="font-weight:700;font-size:13px;color:#1a1a2e"></td>
+            <td style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
+            <td style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
+            <td style="color:#94a3b8;font-size:9px;text-align:center">&mdash;</td>
+            <td id="wk-inv-net" style="font-weight:700;font-size:13px;color:#1a1a2e"></td>
           </tr>
 
-          <!-- Same-week revenue -->
+          <!-- Same-week adds -->
           <tr style="background:#faf5ff;border-top:2px solid #ddd6fe">
             <td colspan="2" style="font-size:9px;font-weight:700;color:#7c3aed;padding:4px 8px;text-transform:uppercase;letter-spacing:.4px">
-              SW Adds (expected)</td>
-            <td colspan="9" style="font-size:10px;color:#7c3aed;padding:4px 8px">
-              Clinic-gen: <id id="wk-sw-cg" style="font-weight:600"></id>
-              &nbsp;&middot;&nbsp;
-              Non-clinic: <id id="wk-sw-ext" style="font-weight:600"></id>
-              &nbsp;&middot;&nbsp;
-              Revenue: <span id="wk-sw-rev-total" style="font-weight:700"></span>
-              <span style="color:#a78bfa;font-size:9px"> (CG: <span id="wk-sw-rev-cg"></span> · Ext: <span id="wk-sw-rev-ext"></span>)</span>
+              SW Adds</td>
+            <td colspan="4" style="font-size:10px;color:#7c3aed;padding:4px 8px">
+              CG: <span id="wk-sw-cg" style="font-weight:600"></span>
+              &nbsp;&middot;&nbsp; Non-clinic: <span id="wk-sw-ext" style="font-weight:600"></span>
+              &nbsp;&middot;&nbsp; Revenue: <span id="wk-sw-rev-total" style="font-weight:700"></span>
+              <span style="color:#a78bfa;font-size:9px"> (CG: <span id="wk-sw-rev-cg"></span> &middot; Ext: <span id="wk-sw-rev-ext"></span>)</span>
             </td>
           </tr>
         </tbody>
       </table>
     </div>
     <p class="sec-note">
-      <strong>Contracted</strong> = expected sales revenue from this week&rsquo;s appointments (funnel model, show &times; close &times; ha &times; ASP).
-      <strong>SDF Revenue</strong> = contracted &times; SDF% (same-day fit rate) &mdash; portion invoiced same week.
-      <strong>+ Fittings</strong> = SDF revenue + prior-period deliveries entered above.
-      All ranges are 95% CI using show-rate &amp; close-rate uncertainty.
-      <br>
-      <strong>Adjustments (Most Likely, week total only):</strong>
-      Non-invoiced = contracted &times; ${f.pct(PIPELINE_NONINVOICE_RATE)} (historical contracted-to-invoiced gap).
-      Returns = invoiced &times; 6%. Net Invoiced = + Fittings ML &minus; adjustments.
-      <br>
-      <strong>Same-week adds:</strong> historical avg tests booked same week they&rsquo;re scheduled (clinic-gen / non-clinic).
+      <strong>Contracted</strong> = expected new sales from scheduled appointments (show &times; close &times; ha &times; ASP). High/Most Likely/Low reflect show-rate &amp; close-rate CI.
+      <strong>SDF Revenue</strong> = contracted &times; SDF% &mdash; the portion invoiced same week.
+      <strong>Fittings</strong> = exact prior-period delivery amounts you enter above (no range &mdash; known).
+      <strong>SDF + Fittings</strong> = total expected invoiced for the day/week.
+      Adjustments apply to week Most Likely totals only.
     </p>`;
 
   updateDailyInvoiced();
