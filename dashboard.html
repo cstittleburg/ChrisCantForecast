@@ -2231,7 +2231,6 @@ function showForecastResults(preds, filename){
           </tr></thead>
           <tbody>${Object.entries(wsClinics).map(([cl,ws])=>{
             const delta = ws.delta;
-            const dColor = delta==null?'':'(delta>=0)?'#15803d':'#dc2626';
             return `<tr>
               <td style="font-size:11px;font-weight:600">${cl}</td>
               <td>${ws.tests != null ? ws.tests.toFixed(0) : '\u2014'}</td>
