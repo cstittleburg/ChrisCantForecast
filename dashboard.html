@@ -238,7 +238,7 @@ function renderLead(){
   const ls = D.lead_sources;
   document.getElementById('p-lead').innerHTML = `
     <p class="sec-note">
-      Lead sources are never aggregated — each category shown separately with 95% Wilson confidence intervals.
+      Lead sources are never aggregated — each category shown separately with 90% Wilson confidence intervals.
       <span style="display:inline-flex;gap:10px;margin-left:8px">
         <span><span class="pill clinic">Clinic-Gen</span></span>
         <span><span class="pill external">External</span></span>
@@ -246,7 +246,7 @@ function renderLead(){
       </span>
     </p>
     <div class="chart-row">
-      <div class="cbox" style="flex:2"><h3>Show Rate by Lead Source \u2014 sorted, 95% CI</h3><canvas id="cv-sr"></canvas></div>
+      <div class="cbox" style="flex:2"><h3>Show Rate by Lead Source \u2014 sorted, 90% CI</h3><canvas id="cv-sr"></canvas></div>
       <div class="cbox" style="flex:1"><h3>Test Volume by Lead Source</h3><canvas id="cv-vol"></canvas></div>
     </div>
     <div class="twrap"><table id="tbl-ls">
@@ -255,9 +255,9 @@ function renderLead(){
         <th data-num="false">Type</th>
         <th>Tests</th>
         <th>Show Rate</th>
-        <th data-num="false">95% CI</th>
+        <th data-num="false">90% CI</th>
         <th>Close Rate</th>
-        <th data-num="false">Close 95% CI</th>
+        <th data-num="false">Close 90% CI</th>
         <th>Contracted Rev</th>
         <th>EV/Test</th>
       </tr></thead>
@@ -341,10 +341,10 @@ function renderLead(){
 function renderClinics(){
   const cl = D.clinics;
   document.getElementById('p-clinics').innerHTML = `
-    <p class="sec-note">Click any column to sort. Show rate 95% CI via Wilson score interval.
+    <p class="sec-note">Click any column to sort. Show rate 90% CI via Wilson score interval.
     Confirmed vs. non-confirmed show rates reveal the lift from appointment confirmation.</p>
     <div class="chart-row">
-      <div class="cbox"><h3>Show Rate by Clinic \u2014 95% CI</h3><canvas id="cv-csr"></canvas></div>
+      <div class="cbox"><h3>Show Rate by Clinic \u2014 90% CI</h3><canvas id="cv-csr"></canvas></div>
       <div class="cbox"><h3>HA Units by Clinic</h3><canvas id="cv-cu"></canvas></div>
     </div>
     <div class="twrap"><table id="tbl-cl">
@@ -353,7 +353,7 @@ function renderClinics(){
         <th data-num="false">ST</th>
         <th>Tests</th>
         <th>Show Rate</th>
-        <th data-num="false">95% CI</th>
+        <th data-num="false">90% CI</th>
         <th>Conf SR</th>
         <th>Non-Conf SR</th>
         <th>HA Units</th>
@@ -383,15 +383,15 @@ function renderPatients(){
     <p class="sec-note">From appointment-level Sales Funnel (sample, n=${f.n(D.cross_check.sf_sample)}).
     New Prospect = first-time buyer. Customer = existing patient. Database Prospect = prior non-purchaser in system.</p>
     <div class="chart-row">
-      <div class="cbox"><h3>Show Rate by Patient Type \u2014 95% CI</h3><canvas id="cv-ptsr" height="200"></canvas></div>
-      <div class="cbox"><h3>Close Rate by Patient Type \u2014 95% CI</h3><canvas id="cv-ptcr" height="200"></canvas></div>
+      <div class="cbox"><h3>Show Rate by Patient Type \u2014 90% CI</h3><canvas id="cv-ptsr" height="200"></canvas></div>
+      <div class="cbox"><h3>Close Rate by Patient Type \u2014 90% CI</h3><canvas id="cv-ptcr" height="200"></canvas></div>
     </div>
     <div class="twrap"><table>
       <thead><tr>
         <th data-num="false">Patient Type</th><th>Count</th><th>Showed</th>
-        <th>Show Rate</th><th data-num="false">95% CI</th>
+        <th>Show Rate</th><th data-num="false">90% CI</th>
         <th>Sold</th><th>Aidable</th>
-        <th>Close Rate</th><th data-num="false">95% CI</th>
+        <th>Close Rate</th><th data-num="false">90% CI</th>
       </tr></thead>
       <tbody>${pts.map(d=>`<tr>
         <td><strong>${d.type}</strong></td>
@@ -436,8 +436,8 @@ function renderOrigin(){
       </div>`).join('')}
     </div>
     <div class="chart-row">
-      <div class="cbox"><h3>Show Rate \u2014 Clinic-Generated vs External, 95% CI</h3><canvas id="cv-osr" height="200"></canvas></div>
-      <div class="cbox"><h3>Close Rate \u2014 Clinic-Generated vs External, 95% CI</h3><canvas id="cv-ocr" height="200"></canvas></div>
+      <div class="cbox"><h3>Show Rate \u2014 Clinic-Generated vs External, 90% CI</h3><canvas id="cv-osr" height="200"></canvas></div>
+      <div class="cbox"><h3>Close Rate \u2014 Clinic-Generated vs External, 90% CI</h3><canvas id="cv-ocr" height="200"></canvas></div>
     </div>`;
 }
 
@@ -614,7 +614,7 @@ function renderAnalysis(){
     </p>
 
     <div class="section-title" style="font-size:13px;font-weight:600;margin-bottom:12px">
-      Show Rate Drivers &mdash; 95% Wilson CI
+      Show Rate Drivers &mdash; 90% Wilson CI
     </div>
     <div class="corr-grid" id="corr-charts"></div>
 
@@ -1487,7 +1487,7 @@ function renderDailyRevSection(preds){
     <div id="fc-drill-body" style="display:none">
       <p class="sec-note" style="margin-bottom:8px">
         Active tests per day (red = cancelled), EV/test revenue below count.
-        Weekly total: blue = EV/test, grey range = funnel 95% CI.
+        Weekly total: blue = EV/test, grey range = funnel 90% CI.
         Less reliable for small-volume clinics.
       </p>
       <div class="twrap" style="overflow-x:auto">
@@ -1976,7 +1976,7 @@ function renderForecastHistory(){
         <th data-num="false">File</th>
         <th>Active/Cancel</th>
         <th>Contracted — EV/Test</th>
-        <th data-num="false">Contracted — Funnel 95% CI</th>
+        <th data-num="false">Contracted — Funnel 90% CI</th>
         <th data-num="false">Actual Contracted ($)</th>
         <th>EV Error</th>
         <th>Funnel Error</th>
@@ -2120,10 +2120,10 @@ function showForecastResults(preds, filename){
         <div class="sub">${f.n(n_active)} active · ${f.n(n_cancelled)} cancelled</div></div>
       <div class="card hi"><div class="lbl">Expected Shows</div>
         <div class="val">${showCI.mean.toFixed(1)}</div>
-        <div class="sub">${showCI.lo.toFixed(1)}\u2013${showCI.hi.toFixed(1)} &nbsp;95% CI</div></div>
+        <div class="sub">${showCI.lo.toFixed(1)}\u2013${showCI.hi.toFixed(1)} &nbsp;90% CI</div></div>
       <div class="card"><div class="lbl">Expected Sales</div>
         <div class="val">${saleCI.mean.toFixed(1)}</div>
-        <div class="sub">${saleCI.lo.toFixed(1)}\u2013${saleCI.hi.toFixed(1)} &nbsp;95% CI</div></div>
+        <div class="sub">${saleCI.lo.toFixed(1)}\u2013${saleCI.hi.toFixed(1)} &nbsp;90% CI</div></div>
       ${(()=>{
         const fInv  = Math.round(fRevMean * _sdf);
         const evInv = Math.round(evTotal  * _sdf);
@@ -2133,7 +2133,7 @@ function showForecastResults(preds, filename){
       <div class="card" style="border-left:3px solid ${C.funnelBorder}">
         <div class="lbl" style="color:${C.funnel}">Contracted \u2014 Funnel Model</div>
         <div class="val" style="color:${C.funnel}">${f.$(fRevMean)}</div>
-        <div class="sub">${f.$(fRevLo)}\u2013${f.$(fRevHi)} &nbsp;95% CI</div>
+        <div class="sub">${f.$(fRevLo)}\u2013${f.$(fRevHi)} &nbsp;90% CI</div>
       </div>
       <div class="card" style="border-left:3px solid ${C.ev}">
         <div class="lbl" style="color:${C.ev}">Contracted \u2014 EV/Test</div>
@@ -2251,7 +2251,7 @@ function showForecastResults(preds, filename){
       and unconfirmed (avg ${f.pct(avg_show_noconf)}) appointments, from JAN\u2013MAR 2026 actuals.
       Close rate: by lead source category where campaign maps to a known category, otherwise by creator role
       (clinic-gen / external). Aidable loss rate: ${f.pct(D.rates.aidable_rate)} of shows.
-      All show/sale intervals are 95% Poisson-binomial CI (correct for sums of Bernoulli trials with different p\u2019s).
+      All show/sale intervals are 90% Poisson-binomial CI (correct for sums of Bernoulli trials with different p\u2019s).
       <br><br>
       <strong>Revenue \u2014 Funnel model:</strong>
       E[revenue\u1d62] = p_show\u1d62 \u00d7 ${f.pct(D.rates.test_rate)} tested \u00d7 ${f.pct(D.rates.aidable_of_tested)} aidable \u00d7 p_close\u1d62 \u00d7 ${D.rates.ha_per_sale.toFixed(3)} HA/sale \u00d7 ASP (${f.$(D.rates.asp)}/HA).
